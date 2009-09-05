@@ -1,31 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-  <html>
-  <head>
-  <script src="http://www.google.com/jsapi"></script>
-<script>
-  // Load jQuery
-  google.load("jquery", "1");
-
-  // on page load complete, fire off a jQuery json-p query
-  // against Google web search
-  google.setOnLoadCallback(function() {
-    $.getJSON("http://ajax.googleapis.com/ajax/services/search/web?q=google&v=1.0&callback=?",
-
-      // on search completion, process the results
-      function (data) {
-        if (data.responseData.results &&
-            data.responseData.results.length > 0) {
-          var results = data.responseData.results;
-          
-          for (var i=0; i < results.length; i++) {
-            // Display each result however you wish
-            alert(results[i].titleNoFormatting);
-          }    
-        }
-        
-      });
-    });
-</script>
+<html>
+<head>
+	<script src="http://www.google.com/jsapi"></script>
+	<script>google.load("jquery", "1");</script>
 
     <style type="text/css">
     	a { font-weight: bold; }
