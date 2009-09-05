@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+  <html>
+  <head>
+  <script src="http://www.google.com/jsapi"></script>
+<script>
+  // Load jQuery
+  google.load("jquery", "1");
+
+  // on page load complete, fire off a jQuery json-p query
+  // against Google web search
+  google.setOnLoadCallback(function() {
+    $.getJSON("http://ajax.googleapis.com/ajax/services/search/web?q=google&v=1.0&callback=?",
+
+      // on search completion, process the results
+      function (data) {
+        if (data.responseData.results &&
+            data.responseData.results.length > 0) {
+          var results = data.responseData.results;
+          
+          for (var i=0; i < results.length; i++) {
+            // Display each result however you wish
+            alert(results[i].titleNoFormatting);
+          }    
+        }
+        
+      });
+    });
+</script>
+
+    <style type="text/css">
+    	a { font-weight: bold; }
+    	.ouline { border: medium double rgb(200,0,0); padding: 10px; }
+    	.border { border: thin solid rgb(100,100,100); }
+    	.header { border: medium double rgb(0,0,200); font-size: 16px; font-weight: bold; }
+    	.list { border: thin solid rgb(100,100,100); }
+    	.map { border: thin solid rgb(100,100,100); }
+		.list { border: thin solid rgb(50,50,50); }    	
+		.button { border: medium double rgb(200,0,0); }
+    	.status { border: medium double rgb(200,0,0); }
+    	table { border: thin solid rgb(100,100,100); }
+    	.wrapper {
+		     width: 240px;
+		     height: 80px;
+		     margin: auto;
+		     padding: 10px;
+		     margin-top: 10px;
+		     border: 1px solid black;
+		     text-align: center;
+		 }
+		 :link img { border: none; } 
+    </style>
+    <script type="text/javascript" src="jquery.js"></script>
+
+    <script type="text/javascript" src="wut.js"></script>
+    <!--<script type="text/javascript" src="json.js"></script>-->
+    
+    <script type="text/javascript">
+      var links = [
+        { title:"HEADER", params:"Pets" },
+      	{ title:"Drop Pets Table", type:"DELETE", resource:"relational", subresource:"table", params:"table=pets"},
+      	{ title:"Create Pets Table", type:"PUT", resource:"relational", subresource:"table", params:"table=pets&cols={id:int, name:varchar(50), type:varchar(50), owner:int}"},
+      	{ title:"Create Mugsy", type:"PUT", resource:"relational", subresource:"record", params:"table=pets&cols={id:1, name:mugsy, type:dograt, owner:1}"},
+      	{ title:"Create Argyle", type:"PUT", resource:"relational", subresource:"record", params:"table=pets&cols={id:2, name:argyle, type:cat, owner:1}"},
+      	{ title:"Create Tommy", type:"PUT", resource:"relational", subresource:"record", params:"table=pets&cols={id:3, name:tommy, type:cat, owner:1}"},
+      	{ title:"Create Ollie", type:"PUT", resource:"relational", subresource:"record", params:"table=pets&cols={id:4, name:oliver, type:cat, owner:2}"},
+      	{ title:"List Pets", type:"GET", resource:"relational", subresource:"record", params:"table=pets"},
+      	{ title:"HEADER", params:"Photos" },
+      	{ title:"Cat Photos", type:"GET", resource:"photos", subresource:"search", params:"tags=cat"},
+      	{ title:"DogRat Photos", type:"GET", resource:"photos", subresource:"search", params:"tags=ratdog,dog,rat"},
+      	{ title:"HEADER", params:"Owners" },
+      	{ title:"Create Owners Table", type:"PUT", resource:"relational", subresource:"table", params:"table=owner&cols={name:varchar(50)}"},
+      	{ title:"Create Sara", type:"PUT", resource:"relational", subresource:"record", params:"table=pets&cols={name:sara}"},
+      ];
+    
+      $(document).ready(function() {
+      		// list formatting shit
+            $("li:even").css("border", "medium double rgb(200,0,0)");
+            $("li:odd").css("border", "medium double rgb(0,0,200)");
+            $("li").click(function(event) {
+                $(this).hide("slow");
+            });
+            
+            // create table
+            $("#resources").append("<table>");
+            $("#resources table").addClass("outline");
+            $.each(links, function(index,value) {
+            	if (value.title == "HEADER") {
+            		var tdParams = "<td class=header colspan='4'>" + value.params + "</td>";
+            		var tr = "<tr class=border>" +  tdParams + "</tr>";
+            		$("#resources table").append(tr);
+            	} else {
+            		// make links
+	            	var baseUrl = "http://localhost:8001/resource";
+	            	var resourceUrl = value.resource + "/" + value.subresource + "/" + value.params;
+					var buttonUrl = baseUrl + "/" + "html" + "/" + resourceUrl;            	
+					var linkUrl = baseUrl + "/" + "xml" + "/" + resourceUrl;            	
+					
+					// make table row 
+	            	var tdTitle = "<td class=border>" + value.title + "</td>";
+	            	var tdType = "<td class=border>" + value.type + "</td>";
+	            	var tdClick = '<td class=button loc="' + buttonUrl + '" method ="' + value.type + '">click</td>';
+	            	var tdOpen = '<td class=border><a href="' + linkUrl + '">open</a></td>';
+	            	var tr = "<tr class=border>" + tdTitle + tdType + tdClick + tdOpen + "</tr>";
+	            	
+	            	// add table row to table
+	            	$("#resources table").append(tr);
+	            }
+            });
+            
+            // create links
+            $(".button").click(function() {
+            	 //var mType = $(this).attr("method") == "PUT" || $(this).attr("method") == "DELETE" ? "POST" : $(this).attr("method");
+            	 var mType = $(this).attr("method");// == "PUT" || $(this).attr("method") == "DELETE" ? "POST" : $(this).attr("method");
+        		 $.ajax({
+					   url: $(this).attr("loc"),
+					   dataType: "text",
+					   type: mType,
+					   success: function(data) {
+					      $("#results").html(data);
+					      $("#status").html("success");
+					   },
+					   error: function(huh) {
+					      $("#results").html("");
+					   	  $("#status").html("error");
+					   },
+					   beforeSend: function (httpRequest) {
+					      httpRequest.setRequestHeader('X-HTTP-Method-Override', $(this).attr("method"));
+					   }
+				   });
+            });
+            
+       });
+       </script>
+  </head>
+  <body>
+  	<h2>Check it!!</h2>
+    <div id="resources"></div>
+
+    <div id="results" class="border"></div>
+    <div id="status" class="status"></div>
+   </body>
+</html>
+
