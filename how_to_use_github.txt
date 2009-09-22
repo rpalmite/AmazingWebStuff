@@ -1,0 +1,17 @@
+
+
+1) Create an account
+
+2) Setup private / public key using web interface and linux commands
+
+3) git clone git://github.com/rpalmite/AmazingWebStuff.git
+
+4) modify files or add files
+
+5) git add <added files>
+
+6) git commit -a -m "<comment>"
+
+7) git push
+
+
