@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title></title>
+</head>
+<body class="yui-skin-sam">
+
+<form>
+<input type="text"></input>
+<input type="text"></input>
+<input type="text"></input>
+</form>
+
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.0r4/build/yuiloader/yuiloader-min.js" ></script> 
+<script type="text/javascript">
+
+var StoreEnum = {hash:"hash", help:"help/help", email:"email", relational:"relational"};
+var FormatEnum = {json:"json",js:"json",xml:"xml",html:"html",text:"text"};
+var Config = {
+  ip: 10.42.43.1,
+  port: 8001
+};
+
+var HTTPResource = (function() {
+  var HTTPVerbEnum = {get:"GET",put:"PUT",post:"POST",delete:"DELETE"};
+  return {
+    handleSuccess:function(o) {
+      //
+    },
+    handleFailure:function(o) {
+      // Failure handler
+    },
+    get: function(url, parameters) {
+      YAHOO.util.Connect.asyncRequest(HTTPVerbEnum.get, url, callback, parameters);
+    }
+  }
+})();
+
+var URL = function(parts) { 
+  parts.scheme = parts.scheme || "http";
+  return {
+    toString: function() {
+      return parts.scheme +'://'+parts.userinfo+parts.hostname+':'+parts.port+parts.path;
+    }
+  };
+};
+
+var HashStore = (function(resource) {
+  var resource = resource;
+  var hashURL = URL({hostname:Config.ip, port:Config.port, path: '/resource/' + StoreEnum.hash + '/' + FormatEnum.json);
+  return {
+    get: function(key, callback) {
+      resource.get(hashURL.toString(), null, callback);
+    },
+    put: function(key, value, callback) {
+      resource.put(hashURL.toString(), null, callback);
+    }
+  };
+})(HTTPResource);
+
+// Instantiate and configure Loader:
+var loader = new YAHOO.util.YUILoader({ 
+  require: ["datasource", "connection", "dom", "event", "layout", "selector"],
+  loadOptional: true, 
+  onSuccess: function() {
+    // Start the transaction.
+    HashStore.get("foo");
+  }, 
+  timeout: 10000, 
+  combine: true 
+});
+loader.insert();
+</script>
+</body>
+</html>
