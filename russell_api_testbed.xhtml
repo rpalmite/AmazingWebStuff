@@ -19,8 +19,8 @@
 var StoreEnum = {hash:"hash", help:"help/help", email:"email", relational:"relational"};
 var FormatEnum = {json:"json",js:"json",xml:"xml",html:"html",text:"text"};
 var Config = {
-  ip: 10.42.43.1,
-  port: 8001
+  ip: "10.42.43.1",
+  port: "8001"
 };
 
 var HTTPResource = (function() {
@@ -49,10 +49,14 @@ var URL = function(parts) {
 
 var HashStore = (function(resource) {
   var resource = resource;
-  var hashURL = URL({hostname:Config.ip, port:Config.port, path: '/resource/' + StoreEnum.hash + '/' + FormatEnum.json);
+  var hashURL = URL({
+    hostname:Config.ip,
+    port:Config.port,
+    path: '/resource/' + StoreEnum.hash + '/' + FormatEnum.json
+  });
   return {
     get: function(key, callback) {
-      resource.get(hashURL.toString(), null, callback);
+      return resource.get(hashURL.toString(), null, callback);
     },
     put: function(key, value, callback) {
       resource.put(hashURL.toString(), null, callback);
