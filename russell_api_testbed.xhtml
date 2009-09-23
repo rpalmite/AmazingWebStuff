@@ -32,7 +32,7 @@ var HTTPResource = (function() {
     handleFailure:function(o) {
       // Failure handler
     },
-    get: function(url, parameters) {
+    get: function(url, callback, parameters) {
       YAHOO.util.Connect.asyncRequest(HTTPVerbEnum.get, url, callback, parameters);
     }
   }
@@ -70,7 +70,7 @@ var loader = new YAHOO.util.YUILoader({
   loadOptional: true, 
   onSuccess: function() {
     // Start the transaction.
-    HashStore.get("foo");
+    HashStore.get("foo", function() { alert('hi'); });
   }, 
   timeout: 10000, 
   combine: true 
