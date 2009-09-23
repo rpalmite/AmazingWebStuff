@@ -39,10 +39,11 @@ var HTTPResource = (function() {
 })();
 
 var URL = function(parts) { 
-  parts.scheme = parts.scheme || "http";
+  parts.protocol = parts.protocol || "http";
+  parts.userinfo = parts.userinfo || "";
   return {
     toString: function() {
-      return parts.scheme +'://'+parts.userinfo+parts.hostname+':'+parts.port+parts.path;
+      return parts.protocol+'://'+parts.userinfo+parts.hostname+':'+parts.port+parts.path;
     }
   };
 };
