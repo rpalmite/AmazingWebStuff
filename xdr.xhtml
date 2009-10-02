@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+</head>
+<body>
+<script src="../yui/build/yui/yui-debug.js" type="text/javascript"></script>
+<script type="text/javascript">
+YUI({base:"../yui/build/", timeout: 10000, filter: "DEBUG"}).use("queue", "io", "io-xdr", function(Y) {
+  Y.on('io:xdrReady', function() { 
+    Y.io("http://api.webutilitykit.com:8000/resource/json/hash/?id=5&data=3", {
+        method: "POST",
+        data: "name=bob",
+        headers: { 
+          'X-HTTP-Method-Override': 'POST',
+          'foo':'bar'
+        },
+        on: {
+          success: callback,
+          failure: function(id, o, a) {alert("failure");}
+        }
+      });
+  });    
+
+  Y.on('io:success', function() {
+    alert("success");
+  }, this, true);
+
+  Y.io.transport({
+    id:'flash',
+    yid: Y.id,
+    src:'../yui/build/io/io.swf?t=' + new Date().valueOf().toString()
+  }); // cross domain
+});
+</script>
+</body>
+</html>
