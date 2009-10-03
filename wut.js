@@ -1,70 +1,67 @@
+var WUT = function(callback) {
+  YUI({
+    base:"../yui/build/",
+    combine: true,
+    timeout: 10000,
+    filter: "DEBUG"
+  }).use("io-queue", "io", "io-xdr", "json", function(Y) {
+  
+    var request = function(options, params, callback) {
+      var endpoint = "http://api.webutilitykit.com:8000",
+        path,
+        amp = "",
+        data = "",
+        param;
+      
+      if(typeof options.resource !== 'undefined' && options.resource !== "") {
+        path = "/resource/json/" + options.resource;
 
-function _server () {
-	this.save = function save(n) {
-        return n < 10 ? '0' + n : n;
-    }
-    this.load  = function load(resource, action, arguments, callback) {
-    	//var cbresult = callback();
-        var url = "../json/ds/" + resource + "/" + action + "/" + arguments;
-        loadXMLDoc(url, callback);
-        //alert(url);
-    }
-}
-
-if (!this.server) {
-	var server = new _server();
-}
-
-function loadXMLDoc(url, callback) {
-    var xmlhttp = false;
-    // branch for native XMLHttpRequest object
-    if (window.XMLHttpRequest) {// && !(window.ActiveXObject)) {
-        try {
-            xmlhttp = new XMLHttpRequest();
-        } catch(e) {
-            xmlhttp = false;
+        for(var key in params) { if(params.hasOwnProperty(key)) {
+          if(key && params[key]) {
+            param = Y.JSON.stringify(params[key]); 
+            data = data + amp + key + "=" + param;
+            //data = data + amp + key + "=" + params[key];
+            amp = "&";
+          }
+        }}
+      }
+      
+      endpoint = endpoint + path + ((data)? "?" + data: ""); 
+      
+      Y.io.queue(endpoint, {
+        method: options.method,
+        data: data,
+        headers: options.headers,
+        on: {
+          success: function(id, o, a) {
+            callback(id, Y.JSON.parse(o.responseText), a);
+          }
         }
-    // branch for IE/Windows ActiveX version
-    } else if (window.ActiveXObject) {
-        try {
-            xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
-        } catch (e) {
-            try {
-                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-            } catch(e) {
-                xmlhttp = false;
-            }
-        }
-    } else {
-        alert('Perhaps your browser does not support xmlhttprequests');
-    }
-    if (xmlhttp) {
-        xmlhttp.onreadystatechange = function() { processReqChange(xmlhttp, function() { callback(); }); };
-        xmlhttp.open("GET", url, true);
-        xmlhttp.send("");
-    }
-}
-
-
-function processReqChange(xmlhttp, callback) {
-    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            // do something with the results
-            //alert("worked");
-            //alert(xmlhttp.responseText);
-            var myObj = eval ( "(" + xmlhttp.responseText + ")" );
-            callback(myObj);
-            //alert("req change");
-            //$("#test2").append("hi");
-            //$("#test2").append(" dude ");
-            //$("#test2").append(myObj["com.wut.model.ArrayEntityList"].entityList[0].data[0][0]);
-            //$("#test3").append("    ");
-            //$("#test3").append(myObj["com.wut.model.ArrayEntityList"]["entityList"][0]["data"][0][0]);
-            //$("#test3").append(" ---- ");
-            //$("#test3").append(myObj["com.wut.model.ArrayEntityList"]["entityList"][0]["data"][0][1]);
-     } else {
-            // wait for the call to complete
-            //alert("wait");
-            //$("#test3").html("waiting:" + xmlhttp.responseText + "<br>status:" + xmlhttp.statusText + "<br>ready state:" + xmlhttp.readyState + "<br>");
-     }
- }
-
+      });
+    };
+  
+    var WUT = {
+      get: function(options, params, callback) {
+        options.method = "GET";
+        request(options, params, callback);
+        return this;
+      },
+      post: function(options, params, callback) {
+        options.method = "POST";
+        request(options, params, callback);
+        return this;
+      },
+      put: function(options, params, callback) {
+        options.method = "PUT";
+        request(options, params, callback);
+        return this;
+      },
+      del: function(options, params, callback) {
+        options.method = "DELETE";
+        request(options, params, callback);
+        return this;
+      }
+    };
+    return callback(Y, WUT);
+  });
+};
