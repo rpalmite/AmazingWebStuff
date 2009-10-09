@@ -26,19 +26,37 @@
 <script src="wut.js"></script>
 <script type="text/javascript">
 var init = function(Y, WUT) {
-  var submitTicket = function(e, Y, WUT) {
-    var data = [
-      Y.Node.get("#name").getAttrs().value,
-      Y.Node.get("#email").getAttrs().value,
-      Y.Node.get("#phone").getAttrs().value,
-      Y.Node.get("#help-topic").getAttrs().value,
-      Y.Node.get("#subject").getAttrs().value,
-      Y.Node.get("#message").getAttrs().value
-    ];
-    WUT.put({resource: "flat"}, {table:'ticket', data:data}, function(id, o, a) {
-      lastId = o.result;
-    });
+  
+  var submitTicket = function(e) {
+    var TICKET = {name:"0", email:"1", phone:"2", helpTopic:"3", subject:"4", createDate:"5", status:"6"},
+        ticket = [];
+    ticket[TICKET.name] = Y.Node.get("#name").getAttrs().value;
+    ticket[TICKET.email] = Y.Node.get("#email").getAttrs().value;
+    ticket[TICKET.phone] = Y.Node.get("#phone").getAttrs().value;
+    ticket[TICKET.helpTopic] = Y.Node.get("#help-topic").getAttrs().value;
+    ticket[TICKET.subject] = Y.Node.get("#subject").getAttrs().value;
+    ticket[TICKET.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
+    ticket[TICKET.status] = "open";
+
+    WUT.put({resource: "flat"}, {table:'ticket', values:ticket}, ticketSuccess);
   };
+
+  var ticketSuccess = function(id, o, a) {
+    var lastId = o.result,
+        COMMENT = {ticketId:"0", createDate:"1", text:"2", name:"3"},
+        comment = [];
+    comment[COMMENT.ticketId] = lastId;
+    comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
+    comment[COMMENT.text] = Y.Node.get("#message").getAttrs().value;
+    comment[COMMENT.name] = "NULL NAME";
+
+    WUT.put({resource: "flat"}, {table:'message', values:comment}, function(id, o, a, b) {
+      if(b.lastId) {
+        document.location = "http://api.webutilitykit.com:8000/html/pages/viewTicket.html?ticket=" + b.lastId;
+      }
+    }, {lastId: lastId});
+  };
+  
   Y.on("click", submitTicket, "#submit-ticket", null, Y, WUT);
 };
 

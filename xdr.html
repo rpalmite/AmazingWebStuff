@@ -3,35 +3,43 @@
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
-<title></title>
+<title>New Ticket</title>
 </head>
-<body id="foo">
+<body>
+<form id="new-ticket">
+  Please fill in the form below to open a new ticket.<br /><br />
+  <label for="name">Full Name:</label><input type="text" id="name"></input><br />
+  <label for="email">Email:</label><input type="text" id="email"></input><br />
+  <label for="phone">Phone:</label><input type="text" id="phone"></input><br />
+  <label for="help-topic">Help Topic</label><select id="help-topic">
+    <option value="none">None</option>
+  </select><br />
+  <label for="subject">Subject:</label><input type="text" id="subject"></input><br />
+  <label for="message">Message:</label><textarea rows="6" cols="60" id="message"></textarea><br />
+  <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
+  <br />
+  <input type="button" id="submit-ticket" value="Submit Ticket"></input>
+  <input type="button" id="reset-ticket" value="Reset"></input>
+  <input type="button" id="cancel-ticket" value="Cancel"></input>
+</form>
 <script src="../yui/build/yui/yui-debug.js" type="text/javascript"></script>
-<script src="/static/js/wut.js"></script>
+<script src="wut.js"></script>
 <script type="text/javascript">
 var init = function(Y, WUT) {
-  WUT.post({resource: "hash"}, {id:"first", data:"8"}, function(id, o, a){
-    o.result;
-  });
-  WUT.get({resource: "hash"}, {id:"first"}, function(id, o, a) {
-    o.result;
-  });
-  WUT.post({resource: "hash"}, {id:"second", data:[1,2,3,4]}, function(id, o, a){
-    o.result;
-  });
-  WUT.get({resource: "hash"}, {id:"second"}, function(id, o, a) {
-    o.result;
-  });
-  WUT.post({resource: "hash"}, {id:"second", data:[1,2,3,4]}, function(id, o, a){
-    o.result;
-  });
-  var lastId;
-  WUT.put({resource: "flat"}, {table:'test', data:[1,2,3,4,5]}, function(id, o, a) {
-    lastId = o.result;
-  });
-  WUT.get({resource: "flat"}, {table:'test', id:lastId}, function(id, o, a) {
-    o.result;
-  });
+  var submitTicket = function(e, Y, WUT) {
+    var data = [
+      Y.Node.get("#name").getAttrs().value,
+      Y.Node.get("#email").getAttrs().value,
+      Y.Node.get("#phone").getAttrs().value,
+      Y.Node.get("#help-topic").getAttrs().value,
+      Y.Node.get("#subject").getAttrs().value,
+      Y.Node.get("#message").getAttrs().value
+    ];
+    WUT.put({resource: "flat"}, {table:'ticket', data:data}, function(id, o, a) {
+      lastId = o.result;
+    });
+  };
+  Y.on("click", submitTicket, "#submit-ticket", null, Y, WUT);
 };
 
 WUT(init);

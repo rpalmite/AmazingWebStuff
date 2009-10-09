@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+<title>View Ticket</title>
+</head>
+<body>
+  Ticket#  <span id="ticket"></span> <div id="ticket-refresh">refresh</div><br /><br />
+  Ticket Status: <span id="status"></span><br />
+  Name: <span id="name"></span><br />
+  Email: <span id="email"></span><br />
+  Phone: <span id="phone"></span><br />
+  Create Date: <span id="create-date"></span><br />
+  Subject: <span id="subject"></span><br />
+  <h4>Comments</h4>
+  <ul id="comments"></ul>
+  <form id="new-comment">
+    <label for="comment">Comment:</label><textarea rows="6" cols="60" id="message"></textarea><br />
+    <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
+    <br />
+    <input type="button" id="submit-comment" value="Submit Comment"></input>
+    <input type="button" id="reset-comment" value="Reset"></input>
+    <input type="button" id="cancel-comment" value="Cancel"></input>
+  </form>
+<script src="../yui/build/yui/yui-debug.js" type="text/javascript"></script>
+<script src="wut.js"></script>
+<script type="text/javascript">
+var init = function(Y, WUT) {
+  var URL = (function() {
+    // parseUri 1.2.2
+    // (c) Steven Levithan <http://blog.stevenlevithan.com/archives/parseuri>
+    // MIT License
+    // Breaks a URI into pieces
+    var parseUri = function(str, isStrict) {
+      var o = {
+        strictMode: ((isStrict === true)? true: false),
+        key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
+        q: {
+          name: "queryKey",
+          parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+        },
+        parser: {
+          strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+          loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+        }
+  	  },
+      m = o.parser[o.strictMode ? "strict" : "loose"].exec(str),
+      uri = {},
+      i = 14;
+
+      while (i--) uri[o.key[i]] = m[i] || "";
+
+      uri[o.q.name] = {};
+      uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) {
+        if ($1) uri[o.q.name][$1] = $2;
+      });
+
+      return uri;
+    };
+
+    return function(parts) {
+      return {
+        // todo: http://benalman.com/projects/jquery-url-utils-plugin/
+        isSameHost : function(url) {
+          return this.parts().host === url.parts().host;
+        },
+        parts : function() { 
+          if(parts.source) {
+            return parseUri(parts.source);
+          } else {
+            return null;
+          }
+        },
+        getQueryParams: function() {
+          var keyValuePairs = this.parts()["query"].split(/[&?]/g);
+          var params = {};
+          for (var i = 0, n = keyValuePairs.length; i < n; ++i) {
+            var m = keyValuePairs[i].match(/^([^=]+)(?:=([\s\S]*))?/);
+            if (m) {
+              var key = decodeURIComponent(m[1]);
+              params[key] = decodeURIComponent(m[2]);
+            }
+          }
+          return params;
+        },
+        toString: function() {
+          if(parts.source) {
+            return parts.source + "";
+          }
+        }
+      }
+    };
+  })();
+
+  var TICKET = {name:"0", email:"1", phone:"2", helpTopic:"3", subject:"4", createDate:"5", status:"6"};
+  var COMMENT = {ticketId:"0", createDate:"1", text:"2", name:"3"};
+
+  comments = Y.Node.get("#comments");
+  var ticketId = URL({source: document.location}).getQueryParams()["ticket"];
+  Y.Node.get("#ticket").appendChild(Y.Node.create(ticketId+""));
+  WUT.get({resource: "flat"}, {table:'ticket', id:ticketId}, function(id, o) {
+//    var result = {'results' : [ ['Steven Eberling', 'pixelbrain@gmail.com', '(805) 704-6180', 'none', 'test subject', '000', 'open'] ]};
+    var ticketData = o.result.results[0];
+    Y.Node.get("#status").appendChild(Y.Node.create(ticketData[TICKET.status]));
+    Y.Node.get("#name").appendChild(Y.Node.create(ticketData[TICKET.name]));
+    Y.Node.get("#email").appendChild(Y.Node.create(ticketData[TICKET.email]));
+    Y.Node.get("#phone").appendChild(Y.Node.create(ticketData[TICKET.phone]));
+    Y.Node.get("#create-date").appendChild(Y.Node.create(ticketData[TICKET.createDate]));
+    Y.Node.get("#subject").appendChild(Y.Node.create(ticketData[TICKET.subject]));
+  });
+  
+  var refreshComments = function(ticketId, COMMENT) {
+    WUT.get({resource: "flat"}, {table:'comment', filter:{1:ticketId}}, function(id, o, a, COMMENT) {
+      commentsNode = Y.Node.get("#comments");
+      commentsNode.setContent("");
+      for(result in o.result) { if(o.result.hasOwnProperty(result)) {
+        commentsNode.append('<li>'+ o.result[result][COMMENT.name] + "&nbsp;-&nbsp" + o.result[result][COMMENT.createDate] + "&nbsp;-&nbsp" + o.result[result][COMMENT.text] + '</li>');
+      }}
+    }, COMMENT);
+  }
+ 
+  refreshComments(ticketId);
+  
+  var submitComment = function(e, Y, WUT) {
+    var comment = [];
+    comment[COMMENT.ticketId] = ticketId;
+    comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
+    comment[COMMENT.text] = Y.Node.get("#comment").getAttrs().value;
+    comment[COMMENT.name] = "NULL NAME";
+    
+    WUT.put({resource: "flat"}, {table:'comment', data:comment}, function(id, o, a, b) {
+      refreshComments(b.ticketId, COMMENT);
+    }, {ticketId:ticketId, COMMENT:COMMENT);
+  };
+
+  Y.on("click", submitComment, "#submit-comment", null, Y, WUT);  
+};
+
+WUT(init);
+</script>
+</body>
+</html>
