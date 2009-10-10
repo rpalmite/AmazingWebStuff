@@ -16,7 +16,7 @@ except getopt.GetoptError:
 	sys.exit(2)
 
 #refresh local depot
-os.chdir('Users/seberlin/Dev/AmazingWebStuff')
+os.chdir('/Users/seberlin/Dev/AmazingWebStuff')
 os.system('git pull')
 
 ticketDemoHTML = ['viewTicket.html', 'ticketHistory.html', 'newTicket.html']
