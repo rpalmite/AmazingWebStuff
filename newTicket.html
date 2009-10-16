@@ -7,7 +7,7 @@
 </head>
 <body>
 <h1>New Ticket</h1>
-<a href="http://api.webutilitykit.com:8000/html/pages/ticketHistory.html">All Tickets</a>
+<a href="/html/pages/ticketHistory.html">All Tickets</a>
 <br /><br />
 <form id="new-ticket">
   Please fill in the form below to open a new ticket.<br /><br />
@@ -53,14 +53,14 @@ var init = function(Y, WUT) {
     comment[COMMENT.text] = Y.Node.get("#comment").getAttrs().value;
     comment[COMMENT.name] = "NULL NAME";
 
-    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a, b) {
-      if(b.lastId) {
-        document.location = "http://api.webutilitykit.com:8000/html/pages/viewTicket.html?ticket=" + b.lastId;
+    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
+      if(a.args.lastId) {
+        document.location = "/html/pages/viewTicket.html?ticket=" + a.args.lastId;
       }
     }, {lastId: lastId});
   };
   
-  Y.on("click", submitTicket, "#submit-ticket", null, Y, WUT);
+  Y.on("click", submitTicket, "#submit-ticket", this);
 };
 
 WUT(init);

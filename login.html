@@ -15,10 +15,12 @@
 <script type="text/javascript">
 var init = function(Y, WUT) {
   var login = function() {
-    var username = Y.Node.get("#username").getAttrs().value;
-    var password = Y.Node.get("#password").getAttrs().value;
-    WUT.login(username, password);
-    document.location = "http://api.webutilitykit.com:8000/html/pages/ticketHistory.html";
+    var username = Y.Node.get("#username").getAttrs().value,
+        password = Y.Node.get("#password").getAttrs().value;
+    WUT.login(username, password, function() {
+      document.location = "/html/pages/ticketHistory.html";
+    });
+    
   };
   Y.on("click", login, "#login", this);
   

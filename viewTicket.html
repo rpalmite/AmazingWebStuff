@@ -76,12 +76,15 @@ var init = function(Y, WUT) {
           }
         },
         getQueryParams: function() {
-          var keyValuePairs = this.parts()["query"].split(/[&?]/g);
-          var params = {};
-          for (var i = 0, n = keyValuePairs.length; i < n; ++i) {
-            var m = keyValuePairs[i].match(/^([^=]+)(?:=([\s\S]*))?/);
+          var keyValuePairs = this.parts()["query"].split(/[&?]/g),
+              params = {},
+              m,
+              key,
+              i;
+          for (i = 0, n = keyValuePairs.length; i < n; ++i) {
+            m = keyValuePairs[i].match(/^([^=]+)(?:=([\s\S]*))?/);
             if (m) {
-              var key = decodeURIComponent(m[1]);
+              key = decodeURIComponent(m[1]);
               params[key] = decodeURIComponent(m[2]);
             }
           }
@@ -133,12 +136,12 @@ var init = function(Y, WUT) {
     comment[COMMENT.text] = Y.Node.get("#comment").getAttrs().value;
     comment[COMMENT.name] = "NULL NAME";
     
-    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a, b) {
-      refreshComments(b.ticketId, b.COMMENT);
+    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
+      refreshComments(a.args.ticketId, a.args.COMMENT);
     }, {ticketId:ticketId, COMMENT:COMMENT});
   };
 
-  Y.on("click", submitComment, "#submit-comment", null, Y, WUT);  
+  Y.on("click", submitComment, "#submit-comment", this);  
 };
 
 WUT(init);

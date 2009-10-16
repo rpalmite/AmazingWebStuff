@@ -11,7 +11,9 @@ var WUT = function(callback) {
         path,
         amp = "",
         data = "",
-        param;
+        param,
+        token,
+        returnArgs;
       
       if(typeof options.resource !== 'undefined' && options.resource !== "") {
         path = "/resource/json/" + options.resource;
@@ -25,9 +27,19 @@ var WUT = function(callback) {
         }}
       }
       
-      endpoint = endpoint + path + ((data)? "?" + data: ""); 
+      endpoint = endpoint + path + ((data)? "?" + data: "");
 
-      options.headers["AUTHENTICATION-TOKEN"] = Y.Cookie.get("token", {raw: true});
+      // Add authentication token to headers on every request (except login)
+      if(!options.headers) {
+        options.headers = {};
+      }
+      token = Y.Cookie.get("token", {raw: true});
+      if(token) {
+        options.headers["AUTHENTICATION-TOKEN"] = token;
+      }
+      
+      returnArgs = {Y:Y, WUT:WUT, resource: options.resource, table: params.table, method: options.method};
+      returnArgs.args = args;
 
       Y.io.queue(endpoint, {
         method: options.method,
@@ -37,8 +49,7 @@ var WUT = function(callback) {
           success: function (id, o, a) {
             callback(id, 
               eval("(" + o.responseText + ")"), 
-              {Y:Y, WUT:WUT, resource: options.resource, table: params.table, method: options.method},
-              a
+              returnArgs
             ); 
           }
         },
@@ -76,30 +87,37 @@ var WUT = function(callback) {
         } else {
           return {};
         }
-      }
-      login: function(username, password, callback) {
+      },
+      login: function(username, password, success) {
         var loginCallback = function(id, o, a) {
           var today = new Date(),
               tomorrow = new Date();
           if(o.result.indexOf("message") !== 0) { // Response doesn't start with an error message
             tomorrow.setDate(today.getDate() + 1);
-            Y.Cookie.set("username", a.username, {expires: tomorrow, raw: true});
+            Y.Cookie.set("username", a.args.username, {expires: tomorrow, raw: true});
             Y.Cookie.set("token", o.result, {expires: tomorrow, raw: true});
+            success(id, o, a);
+          } else {
+            success(id, o, a); // Todo: failure callback
           }
-          callback(id, o, a);
         };
-        this.post({resource: "authentication"}, {username: username, password: password}, callback, {username:username});
+        this.post({resource: "authentication"}, {username: username, password: password}, loginCallback, {username:username});
       },
       logout: function(success) {
+        console.log("logout");
         var token,
-            logoutCallback = function(id, o, a) {
+            logoutCallback;
+        logoutCallback = function(id, o, a) {
+            console.log("logout callback");
           if(o.result === "success") {
-            Y.Cookie.remove("username");
-            Y.Cookie.remove("token");
             success(id, o, a);
+          } else {
+            success(id, o, a); // Todo: failure callback
           }
         };
         token = Y.Cookie.get("token", {raw: true});
+        Y.Cookie.remove("username");
+        Y.Cookie.remove("token");
         this.del({resource: "authentication"}, {token: token}, logoutCallback);
       }
     };
