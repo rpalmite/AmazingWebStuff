@@ -6,7 +6,10 @@
 <title>View Ticket</title>
 </head>
 <body>
-  Ticket#  <span id="ticket"></span> <div id="ticket-refresh">refresh</div><br /><br />
+  <h1>Ticket #<span id="ticket"></span></h1>
+  <a href="http://api.webutilitykit.com:8000/html/pages/ticketHistory.html">All Tickets</a>
+  <a href="http://api.webutilitykit.com:8000/html/pages/newTicket.html">New Ticket</a>
+  <br /><br />
   Ticket Status: <span id="status"></span><br />
   Name: <span id="name"></span><br />
   Email: <span id="email"></span><br />
@@ -16,7 +19,7 @@
   <h4>Comments</h4>
   <ul id="comments"></ul>
   <form id="new-comment">
-    <label for="comment">Comment:</label><textarea rows="6" cols="60" id="message"></textarea><br />
+    <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
     <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
     <br />
     <input type="button" id="submit-comment" value="Submit Comment"></input>
@@ -93,15 +96,14 @@ var init = function(Y, WUT) {
     };
   })();
 
-  var TICKET = {name:"0", email:"1", phone:"2", helpTopic:"3", subject:"4", createDate:"5", status:"6"};
-  var COMMENT = {ticketId:"0", createDate:"1", text:"2", name:"3"};
+  var TICKET = TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
+  var COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"};
 
   comments = Y.Node.get("#comments");
   var ticketId = URL({source: document.location}).getQueryParams()["ticket"];
   Y.Node.get("#ticket").appendChild(Y.Node.create(ticketId+""));
-  WUT.get({resource: "flat"}, {table:'ticket', id:ticketId}, function(id, o) {
-//    var result = {'results' : [ ['Steven Eberling', 'pixelbrain@gmail.com', '(805) 704-6180', 'none', 'test subject', '000', 'open'] ]};
-    var ticketData = o.result.results[0];
+  WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
+    var ticketData = o.result[0];
     Y.Node.get("#status").appendChild(Y.Node.create(ticketData[TICKET.status]));
     Y.Node.get("#name").appendChild(Y.Node.create(ticketData[TICKET.name]));
     Y.Node.get("#email").appendChild(Y.Node.create(ticketData[TICKET.email]));
@@ -111,27 +113,29 @@ var init = function(Y, WUT) {
   });
   
   var refreshComments = function(ticketId, COMMENT) {
-    WUT.get({resource: "flat"}, {table:'comment', filter:{1:ticketId}}, function(id, o, a, COMMENT) {
+    WUT.get({resource: "virtual"}, {table:'comment', filter:{"ticketId":ticketId}}, function(id, o, a, COMMENT) {
+      var comment;
       commentsNode = Y.Node.get("#comments");
       commentsNode.setContent("");
       for(result in o.result) { if(o.result.hasOwnProperty(result)) {
-        commentsNode.append('<li>'+ o.result[result][COMMENT.name] + "&nbsp;-&nbsp" + o.result[result][COMMENT.createDate] + "&nbsp;-&nbsp" + o.result[result][COMMENT.text] + '</li>');
+        comment = o.result[result];
+        commentsNode.append('<li>'+ comment[COMMENT.name] + "&nbsp;-&nbsp;" + comment[COMMENT.createDate] + "&nbsp;-&nbsp;" + comment[COMMENT.text] + '</li>');
       }}
     }, COMMENT);
   }
  
-  refreshComments(ticketId);
+  refreshComments(ticketId, COMMENT);
   
   var submitComment = function(e, Y, WUT) {
-    var comment = [];
+    var comment = {};
     comment[COMMENT.ticketId] = ticketId;
     comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
     comment[COMMENT.text] = Y.Node.get("#comment").getAttrs().value;
     comment[COMMENT.name] = "NULL NAME";
     
-    WUT.put({resource: "flat"}, {table:'comment', data:comment}, function(id, o, a, b) {
-      refreshComments(b.ticketId, COMMENT);
-    }, {ticketId:ticketId, COMMENT:COMMENT);
+    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a, b) {
+      refreshComments(b.ticketId, b.COMMENT);
+    }, {ticketId:ticketId, COMMENT:COMMENT});
   };
 
   Y.on("click", submitComment, "#submit-comment", null, Y, WUT);  

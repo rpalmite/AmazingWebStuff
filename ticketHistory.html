@@ -6,32 +6,53 @@
 <title>Ticket History</title>
 </head>
 <body>
-Ticket History<br /><br />
-<table id="ticket-history"></table>
-<script src="yui-debug.js" type="text/javascript"></script>
+<h1>Ticket History</h1>
+<a href="http://api.webutilitykit.com:8000/html/pages/newTicket.html">New Ticket</a>
+<a id="loginAction"></a>
+<br /><br />
+<table id="ticket-history">
+<tr>
+<td>Id</td>
+<td>Subject</td>
+<td>Status</td>
+<td>Submitter</td>
+<td>Email</td>
+<td>Created</td>
+</table>
+<script src="../yui/build/yui/yui-debug.js" type="text/javascript"></script>
 <script src="wut.js"></script>
 <script type="text/javascript">
 var init = function(Y, WUT) {
+ 
+  var updateLoginControl = function() {
+    var user = WUT.currentUser();
+    if(user.username) {
+      Y.Node.get("#loginAction").setContent(user.username + " logout");
+    } else {
+      document.location = "http://api.webutilitykit.com:8000/html/pages/login.html";
+    }
+  }
+  updateLoginControl();
 
-  WUT.get({resource: "flat"}, {table:'ticket'}, function(id, o, a) {
-    var TICKET = {name:"0", email:"1", phone:"2", helpTopic:"3", subject:"4", createDate:"5", status:"6"},
+  Y.on("click", WUT.updateLoginControl(), "loginAction", this); 
+  WUT.get({resource: "virtual"}, {table:'ticket'}, function(id, o, a) {
+    var TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"},
         ticket,
-        table = a.Y.Node.get("#ticket-history");
-        tableRow = [];
-    for(var ticketNum in o.results) {
-      ticket = o.results[ticketNum];
+        table = a.Y.Node.get("#ticket-history"),
+        tableRow,
+        ticketNum;
+    for(ticketNum in o.result) { if(o.result.hasOwnProperty(ticketNum)) {
+      ticket = o.result[ticketNum];
+      tableRow = [];
       tableRow.push("<tr>");
       tableRow.push("<td class='ticket-number'>");
-      tableRow.push(ticketNum);
+      tableRow.push(ticket["id"]);
       tableRow.push("</td>");
-      tableRow.push("<td class='create-date'>");
-      tableRow.push(ticket[TICKET.createDate]);
+      tableRow.push("<td class='subject'>");
+      tableRow.push("<a href='http://api.webutilitykit.com:8000/html/pages/viewTicket.html?ticket=" + ticket["id"] + "'>" + o.result[ticketNum][TICKET.subject] + "</a>");
       tableRow.push("</td>");
       tableRow.push("<td class='status'>");
       tableRow.push(ticket[TICKET.status]);
-      tableRow.push("</td>");
-      tableRow.push("<td class='subject'>");
-      tableRow.push("<a href='http://api.webutilitykit.com:8000/html/pages/viewTicket.html?ticket=" + ticketNum + "'>" + o.result[ticketNum][TICKET.subject] + "</a>");
       tableRow.push("</td>");
       tableRow.push("<td class='name'>");
       tableRow.push(ticket[TICKET.name]);
@@ -39,9 +60,12 @@ var init = function(Y, WUT) {
       tableRow.push("<td class='email'>");
       tableRow.push(ticket[TICKET.email]);
       tableRow.push("</td>");
+      tableRow.push("<td class='create-date'>");
+      tableRow.push(ticket[TICKET.createDate]);
+      tableRow.push("</td>");
       tableRow.push("</tr>");
       table.append(tableRow.join(""));
-    }
+    }}
   });
 };
 

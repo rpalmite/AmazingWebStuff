@@ -6,6 +6,9 @@
 <title>New Ticket</title>
 </head>
 <body>
+<h1>New Ticket</h1>
+<a href="http://api.webutilitykit.com:8000/html/pages/ticketHistory.html">All Tickets</a>
+<br /><br />
 <form id="new-ticket">
   Please fill in the form below to open a new ticket.<br /><br />
   <label for="name">Full Name:</label><input type="text" id="name"></input><br />
@@ -15,7 +18,7 @@
     <option value="none">None</option>
   </select><br />
   <label for="subject">Subject:</label><input type="text" id="subject"></input><br />
-  <label for="message">Message:</label><textarea rows="6" cols="60" id="message"></textarea><br />
+  <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
   <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
   <br />
   <input type="button" id="submit-ticket" value="Submit Ticket"></input>
@@ -28,8 +31,8 @@
 var init = function(Y, WUT) {
   
   var submitTicket = function(e) {
-    var TICKET = {name:"0", email:"1", phone:"2", helpTopic:"3", subject:"4", createDate:"5", status:"6"},
-        ticket = [];
+    var TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"},
+        ticket = {};
     ticket[TICKET.name] = Y.Node.get("#name").getAttrs().value;
     ticket[TICKET.email] = Y.Node.get("#email").getAttrs().value;
     ticket[TICKET.phone] = Y.Node.get("#phone").getAttrs().value;
@@ -38,19 +41,19 @@ var init = function(Y, WUT) {
     ticket[TICKET.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
     ticket[TICKET.status] = "open";
 
-    WUT.put({resource: "flat"}, {table:'ticket', values:ticket}, ticketSuccess);
+    WUT.put({resource: "virtual"}, {table:'ticket', data:ticket}, ticketSuccess);
   };
 
   var ticketSuccess = function(id, o, a) {
     var lastId = o.result,
-        COMMENT = {ticketId:"0", createDate:"1", text:"2", name:"3"},
-        comment = [];
+        COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"},
+        comment = {};
     comment[COMMENT.ticketId] = lastId;
     comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
-    comment[COMMENT.text] = Y.Node.get("#message").getAttrs().value;
+    comment[COMMENT.text] = Y.Node.get("#comment").getAttrs().value;
     comment[COMMENT.name] = "NULL NAME";
 
-    WUT.put({resource: "flat"}, {table:'message', values:comment}, function(id, o, a, b) {
+    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a, b) {
       if(b.lastId) {
         document.location = "http://api.webutilitykit.com:8000/html/pages/viewTicket.html?ticket=" + b.lastId;
       }
