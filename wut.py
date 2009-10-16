@@ -21,6 +21,7 @@ def doInDir(dir, fn):
 		os.chdir(dir)
 		fn(x);
 		os.chdir(cwd)
+	return function
 
 def executeCommands(cmdList):
 	for cmd in cmdList:
@@ -44,11 +45,11 @@ except getopt.GetoptError:
 #
 
 def commitLocal(m):
-	executeCommands(['git pull', 'git commit -m 'm])
+	executeCommands(['git pull', 'git commit -a -m ' + m])
 
 for o, a in opts:
 	if o == '-m' or o == '--message=':
-		(doInDir(localRepo, commitLocal))(m)
+		(doInDir(localRepo, commitLocal))(a)
 
 #
 # Export Ticketing System to the Webserver
@@ -58,7 +59,7 @@ ticketDemoHTML = ['viewTicket.html', 'ticketHistory.html', 'newTicket.html']
 
 def putText(srcDir, destDir, htmlFiles):
 	for file in htmlFiles:
-		os.system('cat ' + srcDir +  file + '| curl -X PUT -H \'Content-type: text/xml\' --data-binary @- ' + remoteServ + destDir + '?pagename=' + file)	
+		os.system('cat ' + srcDir + "/" + file + '| curl -X PUT -H \'Content-type: text/xml\' --data-binary @- ' + remoteServ + destDir + '?pagename=' + file)	
 	return
 for o, a in opts:
 	if o == '-x' or o == '--export':

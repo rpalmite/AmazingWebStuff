@@ -33,12 +33,12 @@ var HTTPResource = (function() {
       // Failure handler
     },
     get: function(url, callback, parameters) {
-      YAHOO.util.Connect.asyncRequest(HTTPVerbEnum.get, url, callback, parameters);
+      YAHOO.util.Connect.asyncRequest("GET", url, callback, parameters);
     }
   }
 })();
 
-var URL = function(parts) { 
+var URL = function(parts) {
   parts.protocol = parts.protocol || "http";
   parts.userinfo = parts.userinfo || "";
   return {
@@ -53,14 +53,14 @@ var HashStore = (function(resource) {
   var hashURL = URL({
     hostname:Config.ip,
     port:Config.port,
-    path: '/resource/' + StoreEnum.hash + '/' + FormatEnum.json
+    path: '/resource/' + FormatEnum.json + '/' + StoreEnum.hash
   });
   return {
     get: function(key, callback) {
-      return resource.get(hashURL.toString(), null, callback);
+      return resource.get(hashURL.toString(), callback);
     },
     put: function(key, value, callback) {
-      resource.put(hashURL.toString(), null, callback);
+      resource.put(hashURL.toString(), callback);
     }
   };
 })(HTTPResource);
@@ -71,7 +71,15 @@ var loader = new YAHOO.util.YUILoader({
   loadOptional: true, 
   onSuccess: function() {
     // Start the transaction.
-    HashStore.get("foo", function() { alert('hi'); });
+    HashStore.get("foo", {
+      argument:[], 
+      success: function() {
+        alert("yoyo");
+      },
+      failure: function() {
+        alert("boo");
+      }
+    });
   }, 
   timeout: 10000, 
   combine: true 

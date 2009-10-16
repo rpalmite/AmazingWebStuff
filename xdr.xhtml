@@ -17,15 +17,15 @@ YUI({base:"../yui/build/", timeout: 10000, filter: "DEBUG"}).use("queue", "io", 
           'foo':'bar'
         },
         on: {
-          success: callback,
-          failure: function(id, o, a) {alert("failure");}
+          success: function(id, o, a) {
+            alert("success");
+          },
+          failure: function(id, o, a) {
+            alert("failure");
+          }
         }
       });
-  });    
-
-  Y.on('io:success', function() {
-    alert("success");
-  }, this, true);
+  });
 
   Y.io.transport({
     id:'flash',
