@@ -1,0 +1,31 @@
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+<title>Login</title>
+</head>
+<body>
+<h1>Login</h1>
+<form>
+  Username: <input id="username" type="text"></input>
+  Password: <input id="password" type="text"></input>
+  <input type="button" id="login" value="Submit"></input>
+</form>
+<script src="../yui/build/yui/yui-debug.js" type="text/javascript"></script>
+<script src="wut.js"></script>
+<script type="text/javascript">
+var init = function(Y, WUT) {
+  var login = function() {
+    var username = Y.Node.get("#username").getAttrs().value;
+    var password = Y.Node.get("#password").getAttrs().value;
+    WUT.login(username, password);
+    document.location = "http://api.webutilitykit.com:8000/html/pages/ticketHistory.html";
+  };
+  Y.on("click", login, "#login", this);
+  
+};
+
+WUT(init);
+
+</script>
+</body>
+</html>
