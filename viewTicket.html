@@ -26,7 +26,7 @@
     <input type="button" id="reset-comment" value="Reset"></input>
     <input type="button" id="cancel-comment" value="Cancel"></input>
   </form>
-<script src="../yui/build/yui/yui-debug.js" type="text/javascript"></script>
+<script src="../yui/build/yui/yui.js" type="text/javascript"></script>
 <script src="wut.js"></script>
 <script type="text/javascript">
 var init = function(Y, WUT) {
@@ -116,28 +116,30 @@ var init = function(Y, WUT) {
   });
   
   var refreshComments = function(ticketId, COMMENT) {
-    WUT.get({resource: "virtual"}, {table:'comment', filter:{"ticketId":ticketId}}, function(id, o, a, COMMENT) {
-      var comment;
+    WUT.get({resource: "virtual"}, {table:'comment', filter:{"ticketId":ticketId}}, function(id, o, a) {
+      var comment,
+          COMMENT = a.args.COMMENT;
       commentsNode = Y.Node.get("#comments");
       commentsNode.setContent("");
       for(result in o.result) { if(o.result.hasOwnProperty(result)) {
         comment = o.result[result];
         commentsNode.append('<li>'+ comment[COMMENT.name] + "&nbsp;-&nbsp;" + comment[COMMENT.createDate] + "&nbsp;-&nbsp;" + comment[COMMENT.text] + '</li>');
       }}
-    }, COMMENT);
+    }, {COMMENT:COMMENT});
   }
  
   refreshComments(ticketId, COMMENT);
   
-  var submitComment = function(e, Y, WUT) {
+  var submitComment = function(e) {
     var comment = {};
     comment[COMMENT.ticketId] = ticketId;
     comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
-    comment[COMMENT.text] = Y.Node.get("#comment").getAttrs().value;
-    comment[COMMENT.name] = "NULL NAME";
+    comment[COMMENT.text] = Y.Node.get("#comment").get("value");
+    comment[COMMENT.name] = WUT.currentUser().username;
     
     WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
       refreshComments(a.args.ticketId, a.args.COMMENT);
+      Y.Node.get("#comment").set("value", "");
     }, {ticketId:ticketId, COMMENT:COMMENT});
   };
 
