@@ -2,9 +2,26 @@ var WUT = function(callback) {
   YUI({
     base:"../yui/build/",
     combine: true,
-    timeout: 10000,
-    filter: "DEBUG"
+//    filter: "DEBUG",
+    timeout: 10000
   }).use("io-queue", "io", "io-xdr", "json", "node", "event-custom", "datatype", "cookie", function(Y) {
+
+    var Utils = {
+      jsonStringify: function(obj) {
+        return Y.JSON.stringify(obj);
+      },
+      Cookie: {
+        get: function(key, params) {
+          return Y.Cookie.get(key, params);
+        },
+        set: function(key, value, params) {
+          return Y.Cookie.set(key, value, params);
+        },
+        remove: function(key) {
+          return Y.Cookie.remove(key);
+        }
+      }
+    };
 
     var request = function(options, params, callback, args) {
       var endpoint = "http://api.webutilitykit.com:8000",
@@ -20,7 +37,7 @@ var WUT = function(callback) {
 
         for(var key in params) { if(params.hasOwnProperty(key)) {
           if(key && params[key]) {
-            value = Y.JSON.stringify(params[key]); 
+            value = Utils.jsonStringify(params[key]); 
             data = data + amp + key + "=" + value;
             amp = "&";
           }
@@ -33,7 +50,7 @@ var WUT = function(callback) {
       if(!options.headers) {
         options.headers = {};
       }
-      token = Y.Cookie.get("token", {raw: true});
+      token = Utils.Cookie.get("token", {raw: true});
       if(token) {
         options.headers["AUTHENTICATION-TOKEN"] = token;
       }
@@ -56,6 +73,37 @@ var WUT = function(callback) {
         context: this,
         arguments: args
       });
+    };
+    
+    // parseUri 1.2.2
+    // (c) Steven Levithan <http://blog.stevenlevithan.com/archives/parseuri>
+    // MIT License
+    // Breaks a URI into pieces
+    var parseUri = function(str, isStrict) {
+      var o = {
+        strictMode: ((isStrict === true)? true: false),
+        key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
+        q: {
+          name: "queryKey",
+          parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+        },
+        parser: {
+          strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+          loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+        }
+      },
+      m = o.parser[o.strictMode ? "strict" : "loose"].exec(str),
+      uri = {},
+      i = 14;
+
+      while (i--) uri[o.key[i]] = m[i] || "";
+
+      uri[o.q.name] = {}
+      uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) {
+        if ($1) uri[o.q.name][$1] = $2;
+      });
+
+      return uri;
     };
   
     var WUT = {
@@ -80,8 +128,8 @@ var WUT = function(callback) {
         return this;
       },
       currentUser: function() {
-        var username = Y.Cookie.get("username", {raw: true});
-        var token = Y.Cookie.get("token", {raw: true});
+        var username = Utils.Cookie.get("username", {raw: true});
+        var token = Utils.Cookie.get("token", {raw: true});
         if(token) {
           return {username: username, token: token};
         } else {
@@ -94,8 +142,8 @@ var WUT = function(callback) {
               tomorrow = new Date();
           if(o.result.indexOf("message") !== 0) { // Response doesn't start with an error message
             tomorrow.setDate(today.getDate() + 1);
-            Y.Cookie.set("username", a.args.username, {expires: tomorrow, raw: true});
-            Y.Cookie.set("token", o.result, {expires: tomorrow, raw: true});
+            Utils.Cookie.set("username", a.args.username, {expires: tomorrow, raw: true});
+            Utils.Cookie.set("token", o.result, {expires: tomorrow, raw: true});
             success(id, o, a);
           } else {
             success(id, o, a); // Todo: failure callback
@@ -115,10 +163,45 @@ var WUT = function(callback) {
             success(id, o, a); // Todo: failure callback
           }
         };
-        token = Y.Cookie.get("token", {raw: true});
-        Y.Cookie.remove("username");
-        Y.Cookie.remove("token");
+        token = Utils.Cookie.get("token", {raw: true});
+        Utils.Cookie.remove("username");
+        Utils.Cookie.remove("token");
         this.del({resource: "authentication"}, {token: token}, logoutCallback);
+      },
+      URL: function(parts) {
+        return {
+          // todo: http://benalman.com/projects/jquery-url-utils-plugin/
+          isSameHost : function(url) {
+            return this.parts().host === url.parts().host;
+          },
+          parts : function() { 
+            if(parts.source) {
+              return parseUri(parts.source);
+            } else {
+              return null;
+            }
+          },
+          getQueryParams: function() {
+            var keyValuePairs = this.parts()["query"].split(/[&?]/g),
+                params = {},
+                m,
+                key,
+                i
+            for (i = 0, n = keyValuePairs.length; i < n; ++i) {
+              m = keyValuePairs[i].match(/^([^=]+)(?:=([\s\S]*))?/);
+              if (m) {
+                key = decodeURIComponent(m[1]);
+                params[key] = decodeURIComponent(m[2]);
+              }
+            }
+            return params;
+          },
+          toString: function() {
+            if(parts.source) {
+              return parts.source + "";
+            }
+          }
+        }
       }
     };
     return callback(Y, WUT);
