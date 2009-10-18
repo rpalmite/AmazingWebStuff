@@ -7,8 +7,9 @@
 </head>
 <body>
   <h1>Ticket #<span id="ticket"></span></h1>
-  <a href="http://api.webutilitykit.com:8000/html/pages/ticketHistory.html">All Tickets</a>
-  <a href="http://api.webutilitykit.com:8000/html/pages/newTicket.html">New Ticket</a>
+  <a href="/html/pages/ticketHistory.html">All Tickets</a> 
+  <a href="/html/pages/newTicket.html">New Ticket</a> 
+  <a id="edit-ticket" href="/html/pages/newTicket.html">Edit Ticket</a>
   <br /><br />
   Ticket Status: <span id="status"></span><br />
   Name: <span id="name"></span><br />
@@ -30,81 +31,14 @@
 <script src="wut.js"></script>
 <script type="text/javascript">
 var init = function(Y, WUT) {
-  var URL = (function() {
-    // parseUri 1.2.2
-    // (c) Steven Levithan <http://blog.stevenlevithan.com/archives/parseuri>
-    // MIT License
-    // Breaks a URI into pieces
-    var parseUri = function(str, isStrict) {
-      var o = {
-        strictMode: ((isStrict === true)? true: false),
-        key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
-        q: {
-          name: "queryKey",
-          parser: /(?:^|&)([^&=]*)=?([^&]*)/g
-        },
-        parser: {
-          strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
-          loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
-        }
-  	  },
-      m = o.parser[o.strictMode ? "strict" : "loose"].exec(str),
-      uri = {},
-      i = 14;
-
-      while (i--) uri[o.key[i]] = m[i] || "";
-
-      uri[o.q.name] = {};
-      uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) {
-        if ($1) uri[o.q.name][$1] = $2;
-      });
-
-      return uri;
-    };
-
-    return function(parts) {
-      return {
-        // todo: http://benalman.com/projects/jquery-url-utils-plugin/
-        isSameHost : function(url) {
-          return this.parts().host === url.parts().host;
-        },
-        parts : function() { 
-          if(parts.source) {
-            return parseUri(parts.source);
-          } else {
-            return null;
-          }
-        },
-        getQueryParams: function() {
-          var keyValuePairs = this.parts()["query"].split(/[&?]/g),
-              params = {},
-              m,
-              key,
-              i;
-          for (i = 0, n = keyValuePairs.length; i < n; ++i) {
-            m = keyValuePairs[i].match(/^([^=]+)(?:=([\s\S]*))?/);
-            if (m) {
-              key = decodeURIComponent(m[1]);
-              params[key] = decodeURIComponent(m[2]);
-            }
-          }
-          return params;
-        },
-        toString: function() {
-          if(parts.source) {
-            return parts.source + "";
-          }
-        }
-      }
-    };
-  })();
 
   var TICKET = TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
   var COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"};
 
   comments = Y.Node.get("#comments");
-  var ticketId = URL({source: document.location}).getQueryParams()["ticket"];
+  var ticketId = WUT.URL({source: document.location}).getQueryParams()["ticket"];
   Y.Node.get("#ticket").appendChild(Y.Node.create(ticketId+""));
+  Y.Node.get("#edit-ticket").set("href","/html/pages/newTicket.html?ticket=" + ticketId);
   WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
     var ticketData = o.result[0];
     Y.Node.get("#status").appendChild(Y.Node.create(ticketData[TICKET.status]));

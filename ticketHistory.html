@@ -7,7 +7,7 @@
 </head>
 <body>
 <h1>Ticket History</h1>
-<a href="http://api.webutilitykit.com:8000/html/pages/newTicket.html">New Ticket</a>
+<a href="/html/pages/newTicket.html">New Ticket</a>
 <a href="#" id="login-action"></a>
 <br /><br />
 <table id="ticket-history">
@@ -81,9 +81,19 @@ var init = function(Y, WUT) {
         Y.on("click", function(e) {
           var ticketIdRDF = e.currentTarget.getAttribute("about");
           var ticketId = ticketIdRDF.substring(10, ticketIdRDF.length - 1);
-          WUT.del({resource: "virtual"}, {table:'comment', id:ticketId}, function(id, o, a) {
-            refreshTickets();
-          });
+          WUT.get({resource: "virtual"}, {table:'comment', filter:{"ticketId":ticketId}}, function(id, o, a) {
+            var result, callback = function(){};
+            for(result in o.result) { if(o.result.hasOwnProperty(result)) {
+              if(o.result.length === result) {
+                callback = function(id, o, a) {
+                  WUT.del({resource: "virtual"}, {table:'ticket', id:a.args.ticketId}, function(id, o, a) {
+                    refreshTickets();
+                  }, {ticketId: a.args.ticketId});
+                };
+              }
+              WUT.del({resource: "virtual"}, {table:'comment', id: "'" + o.result[result]["id"] + "'"}, callback, {ticketId: ticketId});
+            }}
+          }, {ticketId: ticketId});
         }, ".delete-ticket", this);
       }
     });

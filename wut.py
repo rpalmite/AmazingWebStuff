@@ -9,7 +9,8 @@ import getopt
 #
 
 localRepo = '/Users/seberlin/Dev/AmazingWebStuff'
-localServ = '/Users/seberlin/Sites/wut'
+localServ = '/Library/WebServer/Documents'
+localHTMLDir = '/html/pages'
 remoteServ = 'http://api.webutilitykit.com:8000'
 remoteHTMLDir = '/resource/html/pages'
 ticketFiles = ['viewTicket.html', 'ticketHistory.html', 'newTicket.html', 'login.html', 'wut.js']
@@ -55,7 +56,7 @@ for o, a in opts:
 for o, a in opts:
 	if o == '-l' or o == '--export-local':
 		for file in ticketFiles:
-			(doInDir(localRepo, copyfile))(file, localServ + "/" + file)		
+			(doInDir(localRepo, copyfile))(file, localServ + localHTMLDir + '/' + file)		
 # Export Repo files to Remote Server
 #
 

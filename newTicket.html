@@ -29,10 +29,9 @@
 <script src="wut.js"></script>
 <script type="text/javascript">
 var init = function(Y, WUT) {
-  
-  var submitTicket = function(e) {
-    var TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"},
-        ticket = {};
+  var TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
+  function getFormValues() {
+    var ticket = {};
     ticket[TICKET.name] = Y.Node.get("#name").getAttrs().value;
     ticket[TICKET.email] = Y.Node.get("#email").getAttrs().value;
     ticket[TICKET.phone] = Y.Node.get("#phone").getAttrs().value;
@@ -40,9 +39,19 @@ var init = function(Y, WUT) {
     ticket[TICKET.subject] = Y.Node.get("#subject").getAttrs().value;
     ticket[TICKET.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
     ticket[TICKET.status] = "open";
-
+    
+    return ticket;
+  };
+  
+  var putTicket = function(e) {
+    var ticket = getFormValues();
     WUT.put({resource: "virtual"}, {table:'ticket', data:ticket}, ticketSuccess);
   };
+
+  var postTicket = function(e) {
+    var ticket = getFormValues();
+    WUT.post({resource: "virtual"}, {table:'ticket', id:ticketId, data:ticket}, ticketSuccess);
+  }
 
   var ticketSuccess = function(id, o, a) {
     var lastId = o.result,
@@ -60,7 +69,21 @@ var init = function(Y, WUT) {
     }, {lastId: lastId});
   };
   
-  Y.on("click", submitTicket, "#submit-ticket", this);
+  var ticketId = WUT.URL({source: document.location}).getQueryParams()["ticket"];
+  if(ticketId) {
+    // TODO: lock form while loading
+    WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
+      var ticketData = o.result[0];
+      Y.Node.get("#name").set("value", ticketData[TICKET.name]);
+      Y.Node.get("#email").set("value", ticketData[TICKET.email]);
+      Y.Node.get("#phone").set("value", ticketData[TICKET.phone]);
+      Y.Node.get("#help-topic").set("value", ticketData[TICKET.helpTopic]);
+      Y.Node.get("#subject").set("value", ticketData[TICKET.subject]);
+    });
+    Y.on("click", postTicket, "#submit-ticket", this);
+  } else {
+    Y.on("click", putTicket, "#submit-ticket", this);
+  }
 };
 
 WUT(init);
