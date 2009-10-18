@@ -20,6 +20,9 @@ var WUT = function(callback) {
         remove: function(key) {
           return Y.Cookie.remove(key);
         }
+      },
+      io: function(endpoint, config) {
+        Y.io.queue(endpoint, config);
       }
     };
 
@@ -58,7 +61,7 @@ var WUT = function(callback) {
       returnArgs = {Y:Y, WUT:WUT, resource: options.resource, table: params.table, method: options.method};
       returnArgs.args = args;
 
-      Y.io.queue(endpoint, {
+      Utils.io(endpoint, {
         method: options.method,
         data: data,
         headers: options.headers,
