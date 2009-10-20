@@ -27,60 +27,59 @@
     <input type="button" id="reset-comment" value="Reset"></input>
     <input type="button" id="cancel-comment" value="Cancel"></input>
   </form>
-<script src="../yui/build/yui/yui.js" type="text/javascript"></script>
-<script src="wut.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
+<script type="text/javascript" src="wut.js"></script>
 <script type="text/javascript">
-var init = function(Y, WUT) {
+var Y = YUI().use("node", "json", "io", "datatype", "cookie");
+var WUT = WUT({YUI:Y});
 
-  var TICKET = TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
-  var COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"};
+var TICKET = TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
+var COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"};
 
-  comments = Y.Node.get("#comments");
-  var ticketId = WUT.URL({source: document.location}).getQueryParams()["ticket"];
-  Y.Node.get("#ticket").appendChild(Y.Node.create(ticketId+""));
-  Y.Node.get("#edit-ticket").set("href","/html/pages/newTicket.html?ticket=" + ticketId);
-  WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
-    var ticketData = o.result[0];
-    Y.Node.get("#status").appendChild(Y.Node.create(ticketData[TICKET.status]));
-    Y.Node.get("#name").appendChild(Y.Node.create(ticketData[TICKET.name]));
-    Y.Node.get("#email").appendChild(Y.Node.create(ticketData[TICKET.email]));
-    Y.Node.get("#phone").appendChild(Y.Node.create(ticketData[TICKET.phone]));
-    Y.Node.get("#create-date").appendChild(Y.Node.create(ticketData[TICKET.createDate]));
-    Y.Node.get("#subject").appendChild(Y.Node.create(ticketData[TICKET.subject]));
-  });
+var comments = Y.one("#comments");
+var ticketId = WUT.URL({source: document.location}).getQueryParams()["ticket"];
+Y.one("#ticket").setContent(ticketId+"");
+Y.one("#edit-ticket").set("href","/html/pages/newTicket.html?ticket=" + ticketId);
+WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
+  var ticketData = o.result[0];
+  Y.one("#status").setContent(ticketData[TICKET.status] || "");
+  Y.one("#name").setContent(ticketData[TICKET.name] || "");
+  Y.one("#email").setContent(ticketData[TICKET.email] || "");
+  Y.one("#phone").setContent(ticketData[TICKET.phone] || "");
+  //Y.one("#create-date").setContent(ticketData[TICKET.createDate] || "");
+  Y.one("#subject").setContent(ticketData[TICKET.subject] || "");
+});
   
-  var refreshComments = function(ticketId, COMMENT) {
-    WUT.get({resource: "virtual"}, {table:'comment', filter:{"ticketId":ticketId}}, function(id, o, a) {
-      var comment,
-          COMMENT = a.args.COMMENT;
-      commentsNode = Y.Node.get("#comments");
-      commentsNode.setContent("");
-      for(result in o.result) { if(o.result.hasOwnProperty(result)) {
-        comment = o.result[result];
-        commentsNode.append('<li>'+ comment[COMMENT.name] + "&nbsp;-&nbsp;" + comment[COMMENT.createDate] + "&nbsp;-&nbsp;" + comment[COMMENT.text] + '</li>');
-      }}
-    }, {COMMENT:COMMENT});
-  }
+var refreshComments = function(ticketId, COMMENT) {
+  WUT.get({resource: "virtual"}, {table:'comment', filter:{"ticketId":ticketId}}, function(id, o, a) {
+    var comment,
+        COMMENT = a.args.COMMENT,
+        commentsNode;
+    Y.all("#comments li").remove();
+    commentsNode = Y.one("#comments");
+    for(result in o.result) { if(o.result.hasOwnProperty(result)) {
+      comment = o.result[result];
+      commentsNode.append('<li>'+ comment[COMMENT.name] + "&nbsp;-&nbsp;" + comment[COMMENT.createDate] + "&nbsp;-&nbsp;" + comment[COMMENT.text] + '</li>');
+    }}
+  }, {COMMENT:COMMENT});
+}
  
-  refreshComments(ticketId, COMMENT);
+refreshComments(ticketId, COMMENT);
   
-  var submitComment = function(e) {
-    var comment = {};
-    comment[COMMENT.ticketId] = ticketId;
-    comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
-    comment[COMMENT.text] = Y.Node.get("#comment").get("value");
-    comment[COMMENT.name] = WUT.currentUser().username;
+var submitComment = function(e) {
+  var comment = {};
+  comment[COMMENT.ticketId] = ticketId;
+  comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
+  comment[COMMENT.text] = Y.one("#comment").get("value");
+  comment[COMMENT.name] = WUT.currentUser().username;
     
-    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
-      refreshComments(a.args.ticketId, a.args.COMMENT);
-      Y.Node.get("#comment").set("value", "");
-    }, {ticketId:ticketId, COMMENT:COMMENT});
-  };
-
-  Y.on("click", submitComment, "#submit-comment", this);  
+  WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
+    refreshComments(a.args.ticketId, a.args.COMMENT);
+    Y.one("#comment").set("value", "");
+  }, {ticketId:ticketId, COMMENT:COMMENT});
 };
+Y.on("click", submitComment, "#submit-comment", this);  
 
-WUT(init);
 </script>
 </body>
 </html>

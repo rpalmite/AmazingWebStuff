@@ -25,68 +25,66 @@
   <input type="button" id="reset-ticket" value="Reset"></input>
   <input type="button" id="cancel-ticket" value="Cancel"></input>
 </form>
-<script src="../yui/build/yui/yui.js" type="text/javascript"></script>
-<script src="wut.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
+<script type="text/javascript" src="wut.js"></script>
 <script type="text/javascript">
-var init = function(Y, WUT) {
-  var TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
-  function getFormValues() {
-    var ticket = {};
-    ticket[TICKET.name] = Y.Node.get("#name").getAttrs().value;
-    ticket[TICKET.email] = Y.Node.get("#email").getAttrs().value;
-    ticket[TICKET.phone] = Y.Node.get("#phone").getAttrs().value;
-    ticket[TICKET.helpTopic] = Y.Node.get("#help-topic").getAttrs().value;
-    ticket[TICKET.subject] = Y.Node.get("#subject").getAttrs().value;
-    ticket[TICKET.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
-    ticket[TICKET.status] = "open";
-    
-    return ticket;
-  };
-  
-  var putTicket = function(e) {
-    var ticket = getFormValues();
-    WUT.put({resource: "virtual"}, {table:'ticket', data:ticket}, ticketSuccess);
-  };
+var Y = YUI().use("node", "json", "io", "datatype", "cookie");
+var WUT = WUT({YUI:Y});
+var TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
+function getFormValues() {
+  var ticket = {};
+  ticket[TICKET.name] = Y.one("#name").get("value");
+  ticket[TICKET.email] = Y.one("#email").get("value");
+  ticket[TICKET.phone] = Y.one("#phone").get("value");
+  ticket[TICKET.helpTopic] = Y.one("#help-topic").get("value");
+  ticket[TICKET.subject] = Y.one("#subject").get("value");
+  ticket[TICKET.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
+  ticket[TICKET.status] = "open";
 
-  var postTicket = function(e) {
-    var ticket = getFormValues();
-    WUT.post({resource: "virtual"}, {table:'ticket', id:ticketId, data:ticket}, ticketSuccess);
-  }
-
-  var ticketSuccess = function(id, o, a) {
-    var lastId = o.result,
-        COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"},
-        comment = {};
-    comment[COMMENT.ticketId] = lastId;
-    comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
-    comment[COMMENT.text] = Y.Node.get("#comment").getAttrs().value;
-    comment[COMMENT.name] = "NULL NAME";
-
-    WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
-      if(a.args.lastId) {
-        document.location = "/html/pages/viewTicket.html?ticket=" + a.args.lastId;
-      }
-    }, {lastId: lastId});
-  };
-  
-  var ticketId = WUT.URL({source: document.location}).getQueryParams()["ticket"];
-  if(ticketId) {
-    // TODO: lock form while loading
-    WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
-      var ticketData = o.result[0];
-      Y.Node.get("#name").set("value", ticketData[TICKET.name]);
-      Y.Node.get("#email").set("value", ticketData[TICKET.email]);
-      Y.Node.get("#phone").set("value", ticketData[TICKET.phone]);
-      Y.Node.get("#help-topic").set("value", ticketData[TICKET.helpTopic]);
-      Y.Node.get("#subject").set("value", ticketData[TICKET.subject]);
-    });
-    Y.on("click", postTicket, "#submit-ticket", this);
-  } else {
-    Y.on("click", putTicket, "#submit-ticket", this);
-  }
+  return ticket;
 };
 
-WUT(init);
+var putTicket = function(e) {
+  var ticket = getFormValues();
+  WUT.put({resource: "virtual"}, {table:'ticket', data:ticket}, ticketSuccess);
+};
+
+var postTicket = function(e) {
+  var ticket = getFormValues();
+  WUT.post({resource: "virtual"}, {table:'ticket', id:ticketId, data:ticket}, ticketSuccess);
+};
+
+var ticketSuccess = function(id, o, a) {
+  var lastId = o.result,
+      COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"},
+      comment = {};
+  comment[COMMENT.ticketId] = lastId;
+  comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
+  comment[COMMENT.text] = Y.one("#comment").get("value");
+  comment[COMMENT.name] = WUT.currentUser().username;
+
+  WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
+    if(a.args.lastId) {
+      document.location = "/html/pages/viewTicket.html?ticket=" + a.args.lastId;
+    }
+  }, {lastId: lastId});
+};
+
+var ticketId = WUT.URL({source: document.location}).getQueryParams()["ticket"];
+if(ticketId) {
+  // TODO: lock form while loading
+  WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
+    var ticketData = o.result[0];
+    Y.one("#name").set("value", ticketData[TICKET.name]);
+    Y.one("#email").set("value", ticketData[TICKET.email]);
+    Y.one("#phone").set("value", ticketData[TICKET.phone]);
+    Y.one("#help-topic").set("value", ticketData[TICKET.helpTopic]);
+    Y.one("#subject").set("value", ticketData[TICKET.subject]);
+  });
+  Y.on("click", postTicket, "#submit-ticket", this);
+} else {
+  Y.on("click", putTicket, "#submit-ticket", this);
+}
 
 </script>
 </body>
