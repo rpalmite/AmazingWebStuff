@@ -3,13 +3,27 @@
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
-<title>New Ticket</title>
+<title>Ticket Management</title>
 </head>
 <body>
+
+<div id="ticket"></div>
+
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
+<script type="text/javascript" src="wut.js"></script>
+<script type="text/javascript" id="login">
+<h1>Login</h1>
+<form>
+  Username: <input id="username" type="text"></input>
+  Password: <input id="password" type="text"></input>
+  <input type="button" id="login" value="Submit"></input>
+</form>
+</script>
+<script type="text/html" id="get-ticket">
 <h1>New Ticket</h1>
-<a href="/html/pages/ticketHistory.html">All Tickets</a>
+<a>All Tickets</a>
 <br /><br />
-<form id="new-ticket">
+<form id="edit-ticket">
   Please fill in the form below to open a new ticket.<br /><br />
   <label for="name">Full Name:</label><input type="text" id="name"></input><br />
   <label for="email">Email:</label><input type="text" id="email"></input><br />
@@ -22,69 +36,82 @@
   <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
   <br />
   <input type="button" id="submit-ticket" value="Submit Ticket"></input>
-  <input type="button" id="reset-ticket" value="Reset"></input>
-  <input type="button" id="cancel-ticket" value="Cancel"></input>
 </form>
-<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
-<script type="text/javascript" src="wut.js"></script>
+</script>
+<script type="text/html" id="post-ticket">
+  <h1>Ticket #<span id="ticket"></span></h1>
+  <a>All Tickets</a> 
+  <a>New Ticket</a> 
+  <a id="edit-ticket">Edit Ticket</a>
+  <br /><br />
+  Ticket Status: <span id="status"></span><br />
+  Name: <span id="name"></span><br />
+  Email: <span id="email"></span><br />
+  Phone: <span id="phone"></span><br />
+  Create Date: <span id="create-date"></span><br />
+  Subject: <span id="subject"></span><br />
+  <h4>Comments</h4>
+  <ul id="comments"></ul>
+  <form id="new-comment">
+    <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
+    <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
+    <br />
+    <input type="button" id="submit-comment" value="Submit Comment"></input>
+  </form>
+</script>
+<script type="text/html" id="list-ticket">
+<h1>Ticket History</h1>
+<a>New Ticket</a>
+<a href="#" id="login-action"></a>
+<br /><br />
+<table id="ticket-history">
+<tr>
+<td>Id</td>
+<td>Subject</td>
+<td>Status</td>
+<td>Submitter</td>
+<td>Email</td>
+<td>Created</td>
+</table>
+</script>
 <script type="text/javascript">
 var Y = YUI().use("node", "json", "io", "datatype", "cookie");
 var WUT = WUT({YUI:Y});
-var TICKET = {name:"name", email:"email", phone:"phone", helpTopic:"helpTopic", subject:"subject", createDate:"createDate", status:"status"};
-function getFormValues() {
-  var ticket = {};
-  ticket[TICKET.name] = Y.one("#name").get("value");
-  ticket[TICKET.email] = Y.one("#email").get("value");
-  ticket[TICKET.phone] = Y.one("#phone").get("value");
-  ticket[TICKET.helpTopic] = Y.one("#help-topic").get("value");
-  ticket[TICKET.subject] = Y.one("#subject").get("value");
-  ticket[TICKET.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
-  ticket[TICKET.status] = "open";
 
-  return ticket;
+var ticket = {
+  name: "ticket",
+  resource: "virtual",
+  cols: {
+    name:{type:"string", maxLength:"30"},
+    email:{type:"string"},
+    phone:{type:"string"},
+    helpTopic:{type:"string"},
+    subject:{type:"string"},
+    createDate:{type:"date"},
+    status:{type:"string"}
+  }
 };
 
-var putTicket = function(e) {
-  var ticket = getFormValues();
-  WUT.put({resource: "virtual"}, {table:'ticket', data:ticket}, ticketSuccess);
+var comment = {
+  name: "comment",
+  resource: "virtual",
+  cols: {
+    ticketId:{type:"manyToOne", fk:"ticket"},
+    createDate:{type:"date"},
+    text:{type:"string"},
+    username:{type:"username"}
+  }
 };
 
-var postTicket = function(e) {
-  var ticket = getFormValues();
-  WUT.post({resource: "virtual"}, {table:'ticket', id:ticketId, data:ticket}, ticketSuccess);
-};
+var ticketUI = WUT.ListDetail({
+  model: ticket,
+  children: [comment],
+  target: "#ticket",
+  list: {label: "subject"},
+  detail: {}
+});
 
-var ticketSuccess = function(id, o, a) {
-  var lastId = o.result,
-      COMMENT = {ticketId:"ticketId", createDate:"createDate", text:"text", name:"name"},
-      comment = {};
-  comment[COMMENT.ticketId] = lastId;
-  comment[COMMENT.createDate] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
-  comment[COMMENT.text] = Y.one("#comment").get("value");
-  comment[COMMENT.name] = WUT.currentUser().username;
-
-  WUT.put({resource: "virtual"}, {table:'comment', data:comment}, function(id, o, a) {
-    if(a.args.lastId) {
-      document.location = "/html/pages/viewTicket.html?ticket=" + a.args.lastId;
-    }
-  }, {lastId: lastId});
-};
-
-var ticketId = WUT.URL({source: document.location}).getQueryParams()["ticket"];
-if(ticketId) {
-  // TODO: lock form while loading
-  WUT.get({resource: "virtual"}, {table:'ticket', id:ticketId}, function(id, o) {
-    var ticketData = o.result[0];
-    Y.one("#name").set("value", ticketData[TICKET.name]);
-    Y.one("#email").set("value", ticketData[TICKET.email]);
-    Y.one("#phone").set("value", ticketData[TICKET.phone]);
-    Y.one("#help-topic").set("value", ticketData[TICKET.helpTopic]);
-    Y.one("#subject").set("value", ticketData[TICKET.subject]);
-  });
-  Y.on("click", postTicket, "#submit-ticket", this);
-} else {
-  Y.on("click", putTicket, "#submit-ticket", this);
-}
+ticketUI.render();
 
 </script>
 </body>
