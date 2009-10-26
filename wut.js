@@ -25,6 +25,40 @@ var WUT = function(libs) {
       };
     }
   }
+  
+  // Simple JavaScript Templating
+  // John Resig - http://ejohn.org/ - MIT Licensed
+  var cache = {}; // Private Cache
+
+  Utils.tmpl = function(str, data){
+    // Figure out if we're getting a template, or if we need to
+    // load the template - and be sure to cache the result.
+    var fn = !/\W/.test(str) ?
+      cache[str] = cache[str] ||
+        tmpl(document.getElementById(str).innerHTML) :
+
+      // Generate a reusable function that will serve as a template
+      // generator (and which will be cached).
+      new Function("obj",
+        "var p=[],print=function(){p.push.apply(p,arguments);};" +
+
+        // Introduce the data as local variables using with(){}
+        "with(obj){p.push('" +
+
+        // Convert the template into pure JavaScript
+        str
+          .replace(/[\r\t\n]/g, " ")
+          .split("[[").join("\t")
+          .replace(/((^|]])[^\t]*)'/g, "$1\r")
+          .replace(/\t=(.*?)]]/g, "',$1,'")
+          .split("\t").join("');")
+          .split("]]").join("p.push('")
+          .split("\r").join("\\'")
+      + "');}return p.join('');");
+
+    // Provide some basic currying to the user
+    return data ? fn( data ) : fn;
+  };
 
   var request = function(options, params, callback, args) {
     var endpoint = "http://api.webutilitykit.com:8000",
@@ -66,11 +100,13 @@ var WUT = function(libs) {
       data: data,
       headers: options.headers,
       on: {
-        success: function (id, o, a) {
-          callback(id, 
-            eval("(" + o.responseText + ")"), 
-            returnArgs
-          ); 
+        success: function(id, o, a) {
+          if(callback) {
+            callback(id, 
+              eval("(" + o.responseText + ")"), 
+              returnArgs
+            ); 
+          }
         }
       },
       context: this,
@@ -147,9 +183,9 @@ var WUT = function(libs) {
           tomorrow.setDate(today.getDate() + 1);
           Utils.Cookie.set("username", a.args.username, {expires: tomorrow, raw: true});
           Utils.Cookie.set("token", o.result, {expires: tomorrow, raw: true});
-          success(id, o, a);
+          if(success) success(id, o, a);
         } else {
-          success(id, o, a); // Todo: failure callback
+          if(success) success(id, o, a); // Todo: failure callback
         }
       };
       this.post({resource: "authentication"}, {username: username, password: password}, loginCallback, {username:username});
@@ -161,15 +197,193 @@ var WUT = function(libs) {
       logoutCallback = function(id, o, a) {
         console.log("logout callback");
         if(o.result === "success") {
-          success(id, o, a);
+          if(success) success(id, o, a);
         } else {
-          success(id, o, a); // Todo: failure callback
+          if(success) success(id, o, a); // Todo: failure callback
         }
       };
       token = Utils.Cookie.get("token", {raw: true});
       Utils.Cookie.remove("username");
       Utils.Cookie.remove("token");
       this.del({resource: "authentication"}, {token: token}, logoutCallback);
+    },
+    ListDetail: function(config) {
+      var viewState;
+  
+      var getFormValues = function(cols) {
+        var col, values = {};
+        for(col in cols) { if(cols.hasOwnProperty(col)) {
+          if(cols[col] && cols[col].type === "date") {
+            values[col] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
+          } else if(cols[col] && cols[col].type === "username") {  
+            values[col] = WUT.currentUser().username
+          } else {
+            values[col] = Y.one("#" + col).get("value");
+          }
+        }}
+        return values;
+      };
+  
+      var viewStates = {
+        login: {
+          template: Utils.tmpl("#login"),
+          controller: function() {
+            return {
+              login: function() {
+                var username = Y.one("#username").get("value"),
+                    password = Y.one("#password").get("value");
+                WUT.login(username, password, function() {
+                  changeViewState(viewState.listAll);
+                });
+              }
+            };
+          }
+        },
+        newSingle: {
+          template: Utils.tmpl("#new-ticket"),
+          controller: function(responses) {
+      
+            var saveSuccess = function(id, o, a) {
+              var child;
+              if(config.children) {
+                for(child in config.children) { if(config.children.hasOwnProperty(child)) {
+                  var childForm = getFormValues(config.children[child].cols);
+                  WUT.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
+                    changeViewState(viewState.editSingle);
+                  }).exec();
+                }}
+              }
+            };
+        
+            return {
+              save: function() {
+                var form = getFormValues(config.model.cols);
+                WUT.post({resource: config.model.resource}, {table:config.model.name, id:singleId, data:form}, saveSuccess).exec();
+                changeViewState(viewState.editSingle);
+              },
+              loadSingle: function() {
+                changeViewState(viewState.editSingle);
+              },
+              loadAll: function() {
+                changeViewState(viewState.listAll);
+              }
+            };
+          }
+        },
+        editSingle: {
+          preload: [
+            {options: {resource: config.model.resource}, params: {table:config.model.name}},
+            {options: {resource: config.children[0].resource}, params: {table:config.children[0].name, filter:{"ticketId":singleId}}}
+          ],
+          template: Utils.tmpl("#edit-ticket"),
+          controller: function(responses) {
+        
+            var saveSuccess = function(id, o, a) {
+              var child;
+              if(config.children) {
+                for(child in config.children) { if(config.children.hasOwnProperty(child)) {
+                  var childForm = getFormValues(config.children[child].cols);
+                  WUT.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
+                    changeViewState(viewState.editSingle);
+                  }).exec();
+                }}
+              }
+            };
+        
+            var deleteSuccess = function(id, o, a) {
+        
+            };
+        
+            var singleId = responses.WHERE_IS_THE_ID;
+        
+            return {
+              responses: function() {
+                return responses;
+              },
+              save: function() {
+                var form = getFormValues(config.model.cols);
+                WUT.post({resource: config.model.resource}, {table:config.model.name, id:singleId, data:form}, saveSuccess).exec();
+                changeViewState(viewState.editSingle);
+              },
+              newSingle: function() {
+                changeViewState(viewState.newSingle);
+              },
+              deleteSingle: function() {
+                changeViewState(viewState.listAll);
+              },
+              loadAll: function() {
+                changeViewState(viewState.listAll);
+              }
+            };
+          }
+        },
+        listAll: {
+          preload: [
+            {options: {resource: config.model.resource}, params: {table:config.model.name}}
+          ],
+          template: Utils.tmpl("#list-ticket"),
+          controller: function(responses) {
+      
+            var deleteSuccess = function(id, o, a) {
+        
+            };
+        
+            return {
+              responses: function() {
+                return responses;
+              },
+              newSingle: function() {
+                changeViewState(viewState.newSingle);
+              },
+              loadSingle: function(id) {
+                changeViewState(viewState.editSingle);
+              },
+              deleteSingle: function(id) {
+                changeViewState(viewState.listAll);
+              }
+            };
+          }
+        }
+      };
+  
+      var multiRequest = function(requests, success, newState) {
+        var req, get;
+        for(req in requests) { if(requests.hasOwnProperty(req)) {
+          get = requests[req];
+          if(req === requests.length - 1) {
+            get.callback = function(id, o, a) {
+              get.callback(id, o, a);
+            };
+          }
+          WUT.get(get.options, get.params, get.callback, get.args);
+        }}
+        success({}, newState);
+      };
+  
+      var changeViewState = function(newState) {
+        var resource, request, requests = [];
+        if(newState.preload) {
+          for(resource in newState.preload) { if(newState.preload.hasOwnProperty(resource)) {
+            requests.push(newState.preload[resource]);
+          }}
+        }
+        multiRequest(requests, function(responses, newState) {
+          /* Construct controller */
+          c = newState.controller(responses);
+          /* Create template */
+          html = newState.template(c);
+          /* Render template */
+          Y.one(config.target).setContent(html);
+          /* Attach event handlers */
+      
+        }, newState);
+      }
+  
+      return {
+        render: function() {
+          changeViewState(viewStates.listAll);
+        }
+      };
     },
     URL: function(parts) {
       return {
