@@ -1,0 +1,11 @@
+
+# create test
+./bcurl.sh PUT "http://localhost:8000/resource/json/database/schema?id=5&table=test"
+
+# get tables
+./bcurl.sh GET "http://localhost:8000/resource/json/database/schema?table=test"
+
+# put some data
+./bcurl.sh POST "http://localhost:8000/resource/json/database/records?table=test&data={one:two,three:four}"
+
+
