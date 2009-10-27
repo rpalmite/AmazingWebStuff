@@ -11,4 +11,5 @@ METHOD=$1
 #echo $METHOD
 
 curl -X $METHOD $URL 
+echo ""
 
