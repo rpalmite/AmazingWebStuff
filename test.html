@@ -38,9 +38,9 @@ asyncTest("REST Virtual", 4, function() {
 
 asyncTest("REST Hash", 1, function() {
   var keyName = "test_" + testDate;
-  WUT.post({resource:"hash"}, {id:keyName, value:"8"});
+  WUT.post({resource:"hash"}, {id:keyName, data:"8"});
   WUT.get({resource:"hash"}, {id:keyName}, function(id, o, a) {
-    equals(o.result.value, "8", "Hash returns expected results.");
+    equals(o.result.data, "8", "Hash returns expected results.");
     start();
   });
 });
