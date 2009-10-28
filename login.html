@@ -21,7 +21,7 @@ var login = function() {
   var username = Y.one("#username").get("value"),
       password = Y.one("#password").get("value");
   WUT.login(username, password, function() {
-    document.location = "/html/pages/ticketHistory.html";
+    document.location = "/html/pages/editor.html";
   });
 };
 Y.on("click", login, "#login", this);
