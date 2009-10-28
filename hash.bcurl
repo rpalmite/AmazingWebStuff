@@ -1,0 +1,6 @@
+
+# putting of hash data
+./bcurl.sh POST "http://localhost:8000/resource/json/hash?id=one&data=1"
+
+# retrieving of hash data
+./bcurl.sh GET "http://localhost:8000/resource/json/hash?id=one"
