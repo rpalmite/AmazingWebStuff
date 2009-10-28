@@ -37,31 +37,33 @@ var WUT = function(libs) { // Power constructor pattern
       var cache = {};
  
       Utils.tmpl = function tmpl(str, data){
+        var fn;
+      
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
-        var fn = !/\W/.test(str) ?
-          cache[str] = cache[str] ||
-            Utils.tmpl(document.getElementById(str).innerHTML) :
-     
+        if(!/\W/.test(str)) {
+          cache[str] = cache[str] || Utils.tmpl(document.getElementById(str).innerHTML);
+          fn = cache[str]; 
+        } else {
           // Generate a reusable function that will serve as a template
           // generator (and which will be cached).
-          new Function("obj",
-            "var p=[],print=function(){p.push.apply(p,arguments);};" +
+          var fn = new Function("obj",
+              "var p=[],print=function(){p.push.apply(p,arguments);};" +
        
-            // Introduce the data as local variables using with(){}
-            "with(obj){p.push('" +
+              // Introduce the data as local variables using with(){}
+              "with(obj){p.push('" +
        
-            // Convert the template into pure JavaScript
-            str
-              .replace(/[\r\t\n]/g, " ")
-              .split("<%").join("\t")
-              .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-              .replace(/\t=(.*?)%>/g, "',$1,'")
-              .split("\t").join("');")
-              .split("%>").join("p.push('")
-              .split("\r").join("\\'")
-          + "');}return p.join('');");
-   
+              // Convert the template into pure JavaScript
+              str.replace(/[\r\t\n]/g, " ")
+                 .replace(/'(?=[^%]*%>)/g,"\t")
+                 .split("'").join("\\'")
+                 .split("\t").join("'")
+                 .replace(/<%=(.+?)%>/g, "',$1,'")
+                 .split("<%").join("');")
+                 .split("%>").join("p.push('")
+              + "');}return p.join('');");
+        }
+
         // Provide some basic currying to the user
         return data ? fn( data ) : fn;
       };
@@ -306,20 +308,22 @@ var WUT = function(libs) { // Power constructor pattern
         return (user.username) ? true: false;
       };
   
-      var changeViewState = function(newState) {
+      var changeViewState = function(newState, args) {
         var resource, request, requests = [];
         if(!isLoggedIn()) {
           newState = viewStates.login;
         }
-        multiRequest(newState.preload, function(responses, newState) {
+        multiRequest(newState.onPreload(args), function(responses, newState) {
           /* Construct controller */
-          c = newState.controller(responses);
+          c = newState.controller(responses, args);
           /* Create template */
           html = newState.template(c);
           /* Render template */
           Y.one(config.target).setContent(html);
           /* Attach event handlers */
-      
+          if(c.onRender) {
+            c.onRender();
+          }
         }, newState);
       };
   
@@ -331,7 +335,7 @@ var WUT = function(libs) { // Power constructor pattern
           }
         },
         newSingle: {
-          template: Utils.tmpl("new-ticket"),
+          template: Utils.tmpl("newticket"),
           controller: function(responses) {
       
             var saveSuccess = function(id, o, a) {
@@ -340,7 +344,7 @@ var WUT = function(libs) { // Power constructor pattern
                 for(child in config.children) { if(config.children.hasOwnProperty(child)) {
                   var childForm = getFormValues(config.children[child].cols);
                   WUT.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
-                    changeViewState(viewState.editSingle);
+                    changeViewState(viewStates.editSingle);
                   }).exec();
                 }}
               }
@@ -350,23 +354,25 @@ var WUT = function(libs) { // Power constructor pattern
               save: function() {
                 var form = getFormValues(config.model.cols);
                 WUT.post({resource: config.model.resource}, {table:config.model.name, id:singleId, data:form}, saveSuccess).exec();
-                changeViewState(viewState.editSingle);
+                changeViewState(viewStates.editSingle);
               },
               loadSingle: function() {
-                changeViewState(viewState.editSingle);
+                changeViewState(viewStates.editSingle);
               },
               loadAll: function() {
-                changeViewState(viewState.listAll);
+                changeViewState(viewStates.listAll);
               }
             };
           }
         },
         editSingle: {
-          preload: [
-            {options: {resource: config.model.resource}, params: {table:config.model.name}},
-            {options: {resource: config.children[0].resource}, params: {table:config.children[0].name, filter:{"ticketId":1}}}
-          ],
-          template: Utils.tmpl("edit-ticket"),
+          onPreload: function(args) {
+            return [
+              {options: {resource: config.model.resource}, params: {table:config.model.name, id:args.id}},
+              {options: {resource: config.children[0].resource}, params: {table:config.children[0].name, filter:{"ticketId": args.id}}}
+            ];
+          },
+          template: Utils.tmpl("postticket"),
           controller: function(responses) {
         
             var saveSuccess = function(id, o, a) {
@@ -375,7 +381,7 @@ var WUT = function(libs) { // Power constructor pattern
                 for(child in config.children) { if(config.children.hasOwnProperty(child)) {
                   var childForm = getFormValues(config.children[child].cols);
                   WUT.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
-                    changeViewState(viewState.editSingle);
+                    changeViewState(viewStates.editSingle);
                   }).exec();
                 }}
               }
@@ -385,34 +391,34 @@ var WUT = function(libs) { // Power constructor pattern
         
             };
         
-            var singleId = responses.WHERE_IS_THE_ID;
-        
             return {
-              responses: function() {
-                return responses;
+              record: function() {
+                return responses[0].result[0];
               },
               save: function() {
                 var form = getFormValues(config.model.cols);
-                WUT.post({resource: config.model.resource}, {table:config.model.name, id:singleId, data:form}, saveSuccess).exec();
-                changeViewState(viewState.editSingle);
+                WUT.post({resource: config.model.resource}, {table:config.model.name, id:singleId, data:form}, saveSuccess);
+                changeViewState(viewStates.editSingle);
               },
               newSingle: function() {
-                changeViewState(viewState.newSingle);
+                changeViewState(viewStates.newSingle);
               },
               deleteSingle: function() {
-                changeViewState(viewState.listAll);
+                changeViewState(viewStates.listAll);
               },
               loadAll: function() {
-                changeViewState(viewState.listAll);
+                changeViewState(viewStates.listAll);
               }
             };
           }
         },
         listAll: {
-          preload: [
-            {options: {resource: config.model.resource}, params: {table:config.model.name}}
-          ],
-          template: Utils.tmpl("list-ticket"),
+          onPreload: function(args) {
+            return [
+              {options: {resource: config.model.resource}, params: {table:config.model.name}}
+            ];
+          },
+          template: Utils.tmpl("listticket"),
           controller: function(responses) {
       
             var deleteSuccess = function(id, o, a) {
@@ -424,13 +430,20 @@ var WUT = function(libs) { // Power constructor pattern
                 return responses[0].result;
               },
               newSingle: function() {
-                changeViewState(viewState.newSingle);
+                changeViewState(viewStates.newSingle);
               },
-              loadSingle: function(id) {
-                changeViewState(viewState.editSingle);
+              loadSingle: function(e) {
+                var recordRDFa = e.target.getAttribute("about");
+                changeViewState(viewStates.editSingle, {id: recordRDFa.substring(10, recordRDFa.length - 1)});
               },
               deleteSingle: function(id) {
-                changeViewState(viewState.listAll);
+                changeViewState(viewStates.listAll);
+              },
+              onRender: function() {
+                Y.on("click", this.loadSingle, ".new-record", this);
+              },
+              onUnload: function() {
+                // remove event handlers
               }
             };
           }
