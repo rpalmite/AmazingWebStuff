@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#!/usr/bin/python
 
 import os
 from shutil import copyfile
@@ -8,7 +8,7 @@ import getopt
 # Configuration
 #
 
-localRepo = '/Users/seberlin/Dev/AmazingWebStuff'
+localRepo = '.'
 localServ = '/Library/WebServer/Documents'
 localHTMLDir = '/html/pages'
 remoteServ = 'http://api.webutilitykit.com:8000'
