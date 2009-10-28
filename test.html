@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+                    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <script src="http://code.jquery.com/jquery-latest.js"></script>
+  <link rel="stylesheet" href="http://github.com/jquery/qunit/raw/master/qunit/qunit.css" type="text/css" media="screen" />
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
+<script type="text/javascript" src="http://github.com/jquery/qunit/raw/master/qunit/qunit.js"></script>
+<script type="text/javascript" src="wut.js"></script><!--http://github.com/rpalmite/AmazingWebStuff/raw/master/wut.js"></script>-->
+<script type="text/javascript">
+var Y = YUI().use("node", "json", "io", "datatype", "cookie");
+var WUT = WUT({YUI:Y});
+WUT.login("pixelbrain@gmail.com", "javascript");
+var testDate = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d-%H-%M-%S"})
+$(document).ready(function(){
+
+module("rest api : core");
+
+asyncTest("REST Virtual", 4, function() {
+  var tableName = "test_" + testDate, rowId;
+  WUT.put({resource: "virtual"}, {table: tableName, data:{foo:"bar"}});
+  WUT.get({resource: "virtual"}, {table: tableName}, function(id, o, a) {
+    ok(o.result[0].foo === "bar", "Table contains a single row.");
+    rowId = o.result[0].id;
+  });
+  WUT.post({resource: "virtual"}, {table: tableName, id: rowId, data:{foo:"bar1"}}, function(id, o, a) {
+    ok(o.result[0].foo === "bar1");
+  });
+  WUT.get({resource: "virtual"}, {table: tableName}, function(id, o, a) {
+    ok(o.result[0].foo === "bar1", "Table contains an updated single row.");
+  });
+  WUT.del({resource: "virtual"}, {table: tableName, id: rowId});
+  WUT.get({resource: "virtual"}, {table: tableName}, function(id, o, a) {
+    equals(o.result.length, 0, "Table contains no rows.");
+    start();
+  });
+});
+
+asyncTest("REST Hash", 1, function() {
+  var keyName = "test_" + testDate;
+  WUT.post({resource:"hash"}, {id:keyName, value:"8"});
+  WUT.get({resource:"hash"}, {id:keyName}, function(id, o, a) {
+    equals(o.result.value, "8", "Hash returns expected results.");
+    start();
+  });
+});
+
+asyncTest("REST Flat", 1, function() {
+  var tableName = "test_" + testDate;
+  WUT.put({resource:"flat"}, {table:tableName, data:[100, 0, 0]}); // red
+  WUT.put({resource:"flat"}, {table:tableName, data:[0, 0, 100]}); // blue
+  WUT.put({resource:"flat"}, {table:tableName, data:[0, 100, 0]}); // green
+  WUT.get({resource:"flat"}, {table:tableName}, function(id, o, a) {
+    var resultSize = o.result.length;
+    equals(3, resultSize);
+    start();
+  }); 
+});
+
+module("components : list detail : core");
+
+test("Load Component", function() {
+
+});
+
+test("List view displayed", function() {
+
+});
+
+test("Drill into detail", function() {
+
+});
+
+test("Detail with related", function() {
+
+});
+
+test("Add related record", function() {
+
+});
+
+test("Add detail record", function() {
+
+});
+
+test("Add detail and related record", function() {
+
+});
+
+test("Just for fun: 'this' vs. scope chain", function() {
+  if (typeof Object.create !== 'function') {
+    Object.create = function (o) {
+      function F() {}
+      F.prototype = o;
+      return new F();
+    };
+  }
+
+  var a = "a";
+  var f1 = function(b) {
+    var c = "c";
+    var o1 = Object.create({a:"pa", b:"pb", d:"pd"}); // f4 extends {}
+    o1.sum = function(d) {
+      return a + b + c + d + this.a + this.b + this.c + this.d;
+    };
+    o1.a = "oa";
+    return o1;
+  };
+  equals(f1("b").sum("d"), "abcdoapbundefinedpd");
+});
+
+test("Just for fun, identifier vs. property resolution: scope vs. prototype chain", function() {
+  if (typeof Object.create !== 'function') {
+    Object.create = function (o) {
+      function F() {}
+      F.prototype = o;
+      return new F();
+    };
+  }
+
+  var a = Object.create({c:"gc"});
+  var f1 = function() {
+    var b = Object.create({a:"pa", b:"pb"});
+    b.a = "la";
+    return (function() {
+      return b.a + b.b + a.c; // [[scope]].length === 3
+    })();
+  };
+  equals(f1(), "lapbgc");
+});
+
+test("Just for fun, object literal scope reduction with anonymous function scopes", function() {
+  var foo0 = {
+    foo1: 1,
+    foo2: {
+      foo3: 3,
+      foo4: {
+        fooFn: function() {
+          ok((foo0.foo1 === 1) && (foo3 === undefined), "Scopes are NOT defined for nested literals.");
+        }
+      }
+    }
+  };
+  foo0.foo2.foo4.fooFn();
+});
+
+});
+</script>
+  
+</head>
+<body>
+  <h1 id="qunit-header">WUT Front-end Test Suite</h1>
+ <h2 id="qunit-banner"></h2>
+ <h2 id="qunit-userAgent"></h2>
+ <ol id="qunit-tests"></ol>
+</body>
+</html>
+

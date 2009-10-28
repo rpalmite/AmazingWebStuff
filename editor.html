@@ -11,13 +11,8 @@
 
 <script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
 <script type="text/javascript" src="wut.js"></script>
-<script type="text/javascript" id="login">
-<h1>Login</h1>
-<form>
-  Username: <input id="username" type="text"></input>
-  Password: <input id="password" type="text"></input>
-  <input type="button" id="login" value="Submit"></input>
-</form>
+<script type="text/html" id="login">
+Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 </script>
 <script type="text/html" id="get-ticket">
 <h1>New Ticket</h1>
@@ -103,7 +98,7 @@ var comment = {
   }
 };
 
-var ticketUI = WUT.ListDetail({
+var ticketUI = WUT.listDetail({
   model: ticket,
   children: [comment],
   target: "#ticket",

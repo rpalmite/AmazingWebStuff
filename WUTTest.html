@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+                    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <script src="http://code.jquery.com/jquery-latest.js"></script>
+  <link rel="stylesheet" href="http://github.com/jquery/qunit/raw/master/qunit/qunit.css" type="text/css" media="screen" />
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
+<script type="text/javascript" src="http://github.com/jquery/qunit/raw/master/qunit/qunit.js"></script>
+<script type="text/javascript" src="http://github.com/rpalmite/AmazingWebStuff/raw/master/wut.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+/** SETUP **/
+var Y = YUI().use("node", "json", "io", "datatype", "cookie");
+var WUT = WUT({YUI:Y});
+WUT.login("pixelbrain@gmail.com", "javascript");
+
+module("rest api : core");
+
+test("GET Virtual", function() {
+  stop(10000);// fail after 10s
+  WUT.put({resource: "virtual"}, {table:"test", data:{foo:"bar"}});
+  WUT.get({resource: "virtual"}, {table:"test"}, function(id, o, a) {
+    ok(o.result !== null, "Test contains a single row.")
+    start();
+  });
+});
+
+test("GET Flat", function() {
+  ok( true, "all pass" );
+});
+
+module("components : list detail : core");
+
+test("Load Component", function() {
+  expect(2);
+  equals( true, false, "failing test" );
+  equals( true, true, "passing test" );
+});
+
+test("List view displayed", function() {
+
+});
+
+test("Drill into detail", function() {
+
+});
+
+test("Detail with related", function() {
+
+});
+
+test("Add related record", function() {
+
+});
+
+test("Add detail record", function() {
+
+});
+
+test("Add detail and related record", function() {
+
+});
+
+});
+</script>
+  
+</head>
+<body>
+  <h1 id="qunit-header">WUT Front-end Test Suite</h1>
+ <h2 id="qunit-banner"></h2>
+ <h2 id="qunit-userAgent"></h2>
+ <ol id="qunit-tests"></ol>
+</body>
+</html>
+
