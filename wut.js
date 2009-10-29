@@ -256,15 +256,20 @@ var WUT = function(libs) { // Power constructor pattern
 
   (function() { /* List-Detail UI Component */
     WUTObj.listDetail = function(config) {
+      var currentState;
+    
       var getFormValues = function(cols) {
-        var col, values = {};
+        var col, values = {}, foundNode;
         for(col in cols) { if(cols.hasOwnProperty(col)) {
           if(cols[col] && cols[col].type === "date") {
             values[col] = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d %T"});
           } else if(cols[col] && cols[col].type === "username") {
             values[col] = WUT.currentUser().username
           } else {
-            values[col] = Y.one("#" + col).get("value");
+            foundNode = Y.one("#" + col);
+            if(foundNode) {
+              values[col] = foundNode.get("value");
+            }
           }
         }}
         return values;
@@ -309,11 +314,22 @@ var WUT = function(libs) { // Power constructor pattern
       };
   
       var changeViewState = function(newState, args) {
-        var resource, request, requests = [];
+        var resource, request, requests = [], preloads = [];
+        
+        if(currentState && currentState.onUnload) {
+          currentState.onUnload();
+        }
+        currentState = newState;
+        
         if(!isLoggedIn()) {
           newState = viewStates.login;
         }
-        multiRequest(newState.onPreload(args), function(responses, newState) {
+        
+        if(newState.onPreload) {
+          preloads = newState.onPreload(args);
+        }
+        
+        multiRequest(preloads, function(responses, newState) {
           /* Construct controller */
           c = newState.controller(responses, args);
           /* Create template */
@@ -335,32 +351,36 @@ var WUT = function(libs) { // Power constructor pattern
           }
         },
         newSingle: {
+          onUnload: function() {
+            Y.Event.purgeElement("#submit-ticket");
+            Y.Event.purgeElement("#all-records");
+          },
           template: Utils.tmpl("newticket"),
           controller: function(responses) {
       
             var saveSuccess = function(id, o, a) {
-              var child;
-              if(config.children) {
-                for(child in config.children) { if(config.children.hasOwnProperty(child)) {
-                  var childForm = getFormValues(config.children[child].cols);
-                  WUT.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
-                    changeViewState(viewStates.editSingle);
-                  }).exec();
-                }}
-              }
+              var child, parentId = o.result;
+              for(child in config.children) { if(config.children.hasOwnProperty(child)) {
+                var childForm = getFormValues(config.children[child].cols);
+                childForm.ticketId = parentId;
+                WUT.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
+                  changeViewState(viewStates.editSingle, {id: parentId});
+                });
+              }}
+              changeViewState(viewStates.editSingle, {id: ticketId});
             };
         
             return {
               save: function() {
                 var form = getFormValues(config.model.cols);
-                WUT.post({resource: config.model.resource}, {table:config.model.name, id:singleId, data:form}, saveSuccess).exec();
-                changeViewState(viewStates.editSingle);
-              },
-              loadSingle: function() {
-                changeViewState(viewStates.editSingle);
+                WUT.put({resource: config.model.resource}, {table:config.model.name, data:form}, saveSuccess);
               },
               loadAll: function() {
                 changeViewState(viewStates.listAll);
+              },
+              onRender: function() {
+                Y.on("click", this.save, "#submit-ticket", this);
+                Y.on("click", this.loadAll, "#all-records", this);
               }
             };
           }
@@ -371,6 +391,10 @@ var WUT = function(libs) { // Power constructor pattern
               {options: {resource: config.model.resource}, params: {table:config.model.name, id:args.id}},
               {options: {resource: config.children[0].resource}, params: {table:config.children[0].name, filter:{"ticketId": args.id}}}
             ];
+          },
+          onUnload: function() {
+            Y.Event.purgeElement("#all-records");
+            Y.Event.purgeElement("#new-ticket");
           },
           template: Utils.tmpl("postticket"),
           controller: function(responses) {
@@ -408,6 +432,10 @@ var WUT = function(libs) { // Power constructor pattern
               },
               loadAll: function() {
                 changeViewState(viewStates.listAll);
+              },
+              onRender: function() {
+                Y.on("click", this.loadAll, "#all-records", this);
+                Y.on("click", this.newSingle, "#new-ticket", this);
               }
             };
           }
@@ -417,6 +445,9 @@ var WUT = function(libs) { // Power constructor pattern
             return [
               {options: {resource: config.model.resource}, params: {table:config.model.name}}
             ];
+          },
+          onUnload: function() {
+            Y.Event.purgeElement(".new-record");
           },
           template: Utils.tmpl("listticket"),
           controller: function(responses) {
@@ -441,9 +472,6 @@ var WUT = function(libs) { // Power constructor pattern
               },
               onRender: function() {
                 Y.on("click", this.loadSingle, ".new-record", this);
-              },
-              onUnload: function() {
-                // remove event handlers
               }
             };
           }
