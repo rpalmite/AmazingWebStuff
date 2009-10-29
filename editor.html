@@ -6,9 +6,7 @@
 <title>Ticket Management</title>
 </head>
 <body>
-
 <div id="ticket"></div>
-
 <script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
 <script type="text/javascript" src="wut.js"></script>
 <script type="text/html" id="login">
@@ -34,10 +32,9 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 </form>
 </script>
 <script type="text/html" id="postticket">
-  <h1>Ticket #<span id="ticket"></span></h1>
+  <h1>Ticket #<span id="ticket-num"><%=record()["id"]%></span></h1>
   <a href="#" id="all-records">All Tickets</a> 
-  <a href="#" id="new-ticket">New Ticket</a> 
-  <a id="edit-ticket">Edit Ticket</a>
+  <a href="#" id="new-ticket">New Ticket</a>
   <br /><br />
   Ticket Status: <span id="status"><%=record()["status"]%></span><br />
   Name: <span id="name"><%=record()["name"]%></span><br />
@@ -46,7 +43,13 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   Create Date: <span id="create-date"><%=record()["createDate"]%></span><br />
   Subject: <span id="subject"><%=record()["subject"]%></span><br />
   <h4>Comments</h4>
-  <ul id="comments"></ul>
+  <ul id="comments">
+  <% for (var childIdx = 0; childIdx < children().length; childIdx++) { %>
+    <li><%=children()[childIdx]["name"]%> - <%=children()[childIdx]["createDate"]%><br />
+    <%=children()[childIdx]["text"]%>
+    </li>
+  <% } %>
+  </ul>
   <form id="new-comment">
     <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
     <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />

@@ -1,9 +1,16 @@
 /* Web Utility Toolkit */
 var WUT = function(libs) { // Power constructor pattern
   var Utils = {},
-      WUTObj = {};
+      WUTObj = {},
+      extend;
   
-  (function() { /* Inject utilities into WUT */
+  /* WUT Utilities */
+  isA = function(o) {
+    function F() {}
+    F.prototype = o;
+    return new F();
+  };
+  (function() {
     /* Load capabilities from external libraries */
     if(libs) {
       if(libs.YUI && libs.YUI.JSON && libs.YUI.JSON.stringify) {
@@ -70,7 +77,8 @@ var WUT = function(libs) { // Power constructor pattern
     })();
   })();
 
-  (function() { /* AJAX API */
+  /* AJAX API */
+  (function() {
     var request = function(options, params, callback, args) {
       var endpoint = "http://api.webutilitykit.com:8000",
         path,
@@ -125,10 +133,8 @@ var WUT = function(libs) { // Power constructor pattern
       });
     };
     
-    // parseUri 1.2.2
-    // (c) Steven Levithan <http://blog.stevenlevithan.com/archives/parseuri>
-    // MIT License
-    // Breaks a URI into pieces
+    // parseUri 1.2.2 - Breaks a URI into pieces
+    // (c) Steven Levithan <http://blog.stevenlevithan.com/archives/parseuri> - MIT License
     var parseUri = function(str, isStrict) {
       var o = {
         strictMode: ((isStrict === true)? true: false),
@@ -254,7 +260,8 @@ var WUT = function(libs) { // Power constructor pattern
     };
   })();
 
-  (function() { /* List-Detail UI Component */
+  /* List-Detail UI Component */
+  (function() {
     WUTObj.listDetail = function(config) {
       var currentState;
     
@@ -418,6 +425,9 @@ var WUT = function(libs) { // Power constructor pattern
             return {
               record: function() {
                 return responses[0].result[0];
+              },
+              children: function() {
+                return responses[1].result;
               },
               save: function() {
                 var form = getFormValues(config.model.cols);
