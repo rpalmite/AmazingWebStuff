@@ -316,14 +316,14 @@ var WUT = function(libs) { // Power constructor pattern
       var changeViewState = function(newState, args) {
         var resource, request, requests = [], preloads = [];
         
+        if(!isLoggedIn()) {
+          newState = viewStates.login;
+        }
+        
         if(currentState && currentState.onUnload) {
           currentState.onUnload();
         }
         currentState = newState;
-        
-        if(!isLoggedIn()) {
-          newState = viewStates.login;
-        }
         
         if(newState.onPreload) {
           preloads = newState.onPreload(args);
