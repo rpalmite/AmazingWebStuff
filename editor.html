@@ -14,11 +14,11 @@
 <script type="text/html" id="login">
 Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 </script>
-<script type="text/html" id="get-ticket">
+<script type="text/html" id="newticket">
 <h1>New Ticket</h1>
-<a>All Tickets</a>
+<a href="#" id="all-records">All Tickets</a>
 <br /><br />
-<form id="edit-ticket">
+<form id="editticket">
   Please fill in the form below to open a new ticket.<br /><br />
   <label for="name">Full Name:</label><input type="text" id="name"></input><br />
   <label for="email">Email:</label><input type="text" id="email"></input><br />
@@ -33,18 +33,18 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <input type="button" id="submit-ticket" value="Submit Ticket"></input>
 </form>
 </script>
-<script type="text/html" id="post-ticket">
+<script type="text/html" id="postticket">
   <h1>Ticket #<span id="ticket"></span></h1>
-  <a>All Tickets</a> 
-  <a>New Ticket</a> 
+  <a href="#" id="all-records">All Tickets</a> 
+  <a href="#" id="new-ticket">New Ticket</a> 
   <a id="edit-ticket">Edit Ticket</a>
   <br /><br />
-  Ticket Status: <span id="status"></span><br />
-  Name: <span id="name"></span><br />
-  Email: <span id="email"></span><br />
-  Phone: <span id="phone"></span><br />
-  Create Date: <span id="create-date"></span><br />
-  Subject: <span id="subject"></span><br />
+  Ticket Status: <span id="status"><%=record()["status"]%></span><br />
+  Name: <span id="name"><%=record()["name"]%></span><br />
+  Email: <span id="email"><%=record()["email"]%></span><br />
+  Phone: <span id="phone"><%=record()["phone"]%></span><br />
+  Create Date: <span id="create-date"><%=record()["createDate"]%></span><br />
+  Subject: <span id="subject"><%=record()["subject"]%></span><br />
   <h4>Comments</h4>
   <ul id="comments"></ul>
   <form id="new-comment">
@@ -54,9 +54,9 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
     <input type="button" id="submit-comment" value="Submit Comment"></input>
   </form>
 </script>
-<script type="text/html" id="list-ticket">
+<script type="text/html" id="listticket">
 <h1>Ticket History</h1>
-<a>New Ticket</a>
+<a href="#" id="new-ticket">New Ticket</a>
 <a href="#" id="login-action"></a>
 <br /><br />
 <table id="ticket-history">
@@ -67,6 +67,17 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <td>Submitter</td>
 <td>Email</td>
 <td>Created</td>
+</tr>
+<% for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
+<tr>
+<td><%=records()[recordIdx].id%></td>
+<td><a href="#" class="new-record" about='[_:Record-<%=records()[recordIdx].id%>]'><%=records()[recordIdx].subject%></a></td>
+<td><%=records()[recordIdx].status%></td>
+<td><%=records()[recordIdx].name%></td>
+<td><%=records()[recordIdx].email%></td>
+<td></td>
+</tr>
+<% } %>
 </table>
 </script>
 <script type="text/javascript">
@@ -77,8 +88,8 @@ var ticket = {
   name: "ticket",
   resource: "virtual",
   cols: {
-    name:{type:"string", maxLength:"30"},
-    email:{type:"string"},
+    name:{type:"username"},
+    email:{type:"string", maxLength:"60"},
     phone:{type:"string"},
     helpTopic:{type:"string"},
     subject:{type:"string"},
