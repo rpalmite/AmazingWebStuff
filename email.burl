@@ -1,0 +1,4 @@
+
+# retrieving of hash data
+# // TODO email should use PUT not POST
+./bcurl.sh POST "http://localhost:8000/resource/json/email?to=rpalmite@gmail.com&subject=testing&body=123"

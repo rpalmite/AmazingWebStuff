@@ -57,6 +57,21 @@ asyncTest("REST Flat", 1, function() {
   }); 
 });
 
+asyncTest("Errors Resource Test", 1, function() {
+  // return all errors
+  WUT.put({resource:"errors"}, {});
+
+  // hash without "data" parameter should create an error 
+  var errno = '';
+  WUT.post({resource:"hash"}, {id:keyName}, function(id,o,a) {
+     errno = o.result.error.errno;
+  });
+  WUT.put({resource:"errors"}, {id:errno}, function(id,o,a) {
+     equals(null, o.result.error);
+  }); 
+    
+});
+
 module("components : list detail : core");
 
 test("Load Component", function() {
