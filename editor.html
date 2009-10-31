@@ -15,10 +15,10 @@
 <script type="text/html" id="login">
 Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 </script>
-<script type="text/html" id="postticket">
+<script type="text/html" id="editsingle">
 <h1><% if(record("id")) { %>Ticket #<%=record("id")%><% } else { %>New Ticket<% } %></h1>
 <a href="#" id="all-records">All Tickets</a> 
-<a href="#" id="new-record">New Ticket</a>
+<% if(record("id")) { %><a href="#" id="new-record">New Ticket</a><% } %>
 <br /><br />
 <form id="editticket">
   <% if(record("name")) { %>Created by: <%=record("name")%><br /><% } %>
@@ -35,6 +35,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <label for="subject">Subject:</label><input type="text" id="subject" value="<%=record("subject")%>"></input><br />
   <br />
   <input type="button" id="submit-record" value="Submit Ticket"></input>
+  <% if(record("id")) { %>
   <h4>Comments</h4>
   <ul id="children">
   <% for (var childIdx = 0; childIdx < children().length; childIdx++) { %>
@@ -47,11 +48,12 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
   <br />
   <input type="button" id="submit-child" value="Submit Comment"></input>
+  <% } %>
 </form>
 </script>
-<script type="text/html" id="listticket">
+<script type="text/html" id="listall">
 <h1>Ticket History</h1>
-<a href="#" id="new-ticket">New Ticket</a>
+<a href="#" id="new-record">New Ticket</a>
 <a href="#" id="login-action"></a>
 <br /><br />
 <table id="ticket-history">
@@ -66,7 +68,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <% for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
   <tr>
   <td><%=records()[recordIdx].id%></td>
-  <td><a href="#" class="new-record" about='[_:Record-<%=records()[recordIdx].id%>]'><%=records()[recordIdx].subject%></a></td>
+  <td><a href="#" class="edit-record" about='[_:Record-<%=records()[recordIdx].id%>]'><%=records()[recordIdx].subject%></a></td>
   <td><%=records()[recordIdx].status%></td>
   <td><%=records()[recordIdx].name%></td>
   <td><%=records()[recordIdx].email%></td>
@@ -82,9 +84,7 @@ WUT.go("listDetail", function(lib) {
       cLib = lib.Component;
 
   lib.listDetail = function(config) {
-    var currentState, viewStates;
-    
-    currentState;
+    var viewStates;
     
     config.children = [config.children]; // For now we only get one
     
@@ -114,11 +114,12 @@ WUT.go("listDetail", function(lib) {
           return []; // nothing to preload
         },
         onUnload: function() {
+          uLib.purgeElement("#submit-child");
           uLib.purgeElement("#submit-record");
           uLib.purgeElement("#all-records");
           uLib.purgeElement("#new-record");
         },
-        template: uLib.tmpl("postticket"),
+        template: uLib.tmpl("editsingle"),
         controller: function(responses, args) {
           var saveSuccess = function(id, o, a) {
             var child;
@@ -143,7 +144,10 @@ WUT.go("listDetail", function(lib) {
               return "";
             },
             children: function() {
-              return responses[1].result;
+              if(responses && responses[1] && responses[1].result) {
+                return responses[1].result;
+              }
+              return [];
             },
             save: function() {
               var params,
@@ -157,7 +161,7 @@ WUT.go("listDetail", function(lib) {
               lib.put({resource: config.model.resource}, params, saveSuccess);
             },
             newSingle: function() {
-              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.newSingle, config);
+              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config);
             },
             deleteSingle: function() {
               cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
@@ -166,6 +170,9 @@ WUT.go("listDetail", function(lib) {
               cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
             },
             onRender: function() {
+              if(this.record("id")) {
+                uLib.on("click", this.save, "#submit-child", this);
+              }
               uLib.on("click", this.save, "#submit-record", this);
               uLib.on("click", this.loadAll, "#all-records", this);
               uLib.on("click", this.newSingle, "#new-record", this);
@@ -181,9 +188,10 @@ WUT.go("listDetail", function(lib) {
           ];
         },
         onUnload: function() {
-          uLib.purgeElement(".new-record");
+          uLib.purgeElement(".edit-record");
+          uLib.purgeElement("#new-record");
         },
-        template: uLib.tmpl("listticket"),
+        template: uLib.tmpl("listall"),
         controller: function(responses) {
 
           var deleteSuccess = function(id, o, a) {
@@ -193,8 +201,8 @@ WUT.go("listDetail", function(lib) {
             records: function() {
               return responses[0].result;
             },
-            newSingle: function() {
-              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.newSingle, config);
+            newSingle: function(e) {
+              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.editSingle, config);
             },
             loadSingle: function(e) {
               var recordRDFa = e.target.getAttribute("about");
@@ -204,7 +212,8 @@ WUT.go("listDetail", function(lib) {
               cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config);
             },
             onRender: function() {
-              uLib.on("click", this.loadSingle, ".new-record", this);
+              uLib.on("click", this.loadSingle, ".edit-record", this);
+              uLib.on("click", this.newSingle, "#new-record", this);
             }
           };
         }
