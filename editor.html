@@ -6,56 +6,48 @@
 <title>Ticket Management</title>
 </head>
 <body>
-<div id="ticket"></div>
 <script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
 <script type="text/javascript" src="wut.js"></script>
+
+<!-- List Detail Component -->
+<div id="TICKET_">
+<div id="ticket"></div>
 <script type="text/html" id="login">
 Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 </script>
-<script type="text/html" id="newticket">
-<h1>New Ticket</h1>
-<a href="#" id="all-records">All Tickets</a>
+<script type="text/html" id="postticket">
+<h1><% if(record("id")) { %>Ticket #<%=record("id")%><% } else { %>New Ticket<% } %></h1>
+<a href="#" id="all-records">All Tickets</a> 
+<a href="#" id="new-record">New Ticket</a>
 <br /><br />
 <form id="editticket">
-  Please fill in the form below to open a new ticket.<br /><br />
-  <label for="name">Full Name:</label><input type="text" id="name"></input><br />
-  <label for="email">Email:</label><input type="text" id="email"></input><br />
-  <label for="phone">Phone:</label><input type="text" id="phone"></input><br />
+  <% if(record("name")) { %>Created by: <%=record("name")%><br /><% } %>
+  <label for="email">Email:</label><input type="text" id="email" value="<%=record("email")%>"></input><br />
+  <label for="phone">Phone:</label><input type="text" id="phone" value="<%=record("phone")%>"></input><br />
   <label for="help-topic">Help Topic</label><select id="help-topic">
-    <option value="none">None</option>
+    <option value="none" <% if(record("helpTopic") === "None") { %>selected="selected"<% } %>>None</option>
   </select><br />
-  <label for="subject">Subject:</label><input type="text" id="subject"></input><br />
-  <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
-  <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
+  <label for="status">Status</label><select id="status">
+    <option value="none" <% if(record("status") === "Open") { %>selected="selected"<% } %>>Open</option>
+    <option value="none" <% if(record("status") === "Closed") { %>selected="selected"<% } %>>Closed</option>
+  </select><br />
+  <% if(record("createDate")) { %>Create Date: <%=record("createDate")%><br /><% } %>
+  <label for="subject">Subject:</label><input type="text" id="subject" value="<%=record("subject")%>"></input><br />
   <br />
-  <input type="button" id="submit-ticket" value="Submit Ticket"></input>
-</form>
-</script>
-<script type="text/html" id="postticket">
-  <h1>Ticket #<span id="ticket-num"><%=record()["id"]%></span></h1>
-  <a href="#" id="all-records">All Tickets</a> 
-  <a href="#" id="new-ticket">New Ticket</a>
-  <br /><br />
-  Ticket Status: <span id="status"><%=record()["status"]%></span><br />
-  Name: <span id="name"><%=record()["name"]%></span><br />
-  Email: <span id="email"><%=record()["email"]%></span><br />
-  Phone: <span id="phone"><%=record()["phone"]%></span><br />
-  Create Date: <span id="create-date"><%=record()["createDate"]%></span><br />
-  Subject: <span id="subject"><%=record()["subject"]%></span><br />
+  <input type="button" id="submit-record" value="Submit Ticket"></input>
   <h4>Comments</h4>
-  <ul id="comments">
+  <ul id="children">
   <% for (var childIdx = 0; childIdx < children().length; childIdx++) { %>
     <li><%=children()[childIdx]["name"]%> - <%=children()[childIdx]["createDate"]%><br />
     <%=children()[childIdx]["text"]%>
     </li>
   <% } %>
   </ul>
-  <form id="new-comment">
-    <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
-    <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
-    <br />
-    <input type="button" id="submit-comment" value="Submit Comment"></input>
-  </form>
+  <label for="children">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
+  <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
+  <br />
+  <input type="button" id="submit-child" value="Submit Comment"></input>
+</form>
 </script>
 <script type="text/html" id="listticket">
 <h1>Ticket History</h1>
@@ -63,30 +55,177 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <a href="#" id="login-action"></a>
 <br /><br />
 <table id="ticket-history">
-<tr>
-<td>Id</td>
-<td>Subject</td>
-<td>Status</td>
-<td>Submitter</td>
-<td>Email</td>
-<td>Created</td>
-</tr>
-<% for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
-<tr>
-<td><%=records()[recordIdx].id%></td>
-<td><a href="#" class="new-record" about='[_:Record-<%=records()[recordIdx].id%>]'><%=records()[recordIdx].subject%></a></td>
-<td><%=records()[recordIdx].status%></td>
-<td><%=records()[recordIdx].name%></td>
-<td><%=records()[recordIdx].email%></td>
-<td></td>
-</tr>
-<% } %>
+  <tr>
+  <td>Id</td>
+  <td>Subject</td>
+  <td>Status</td>
+  <td>Submitter</td>
+  <td>Email</td>
+  <td>Created</td>
+  </tr>
+  <% for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
+  <tr>
+  <td><%=records()[recordIdx].id%></td>
+  <td><a href="#" class="new-record" about='[_:Record-<%=records()[recordIdx].id%>]'><%=records()[recordIdx].subject%></a></td>
+  <td><%=records()[recordIdx].status%></td>
+  <td><%=records()[recordIdx].name%></td>
+  <td><%=records()[recordIdx].email%></td>
+  <td></td>
+  </tr>
+  <% } %>
 </table>
 </script>
 <script type="text/javascript">
-var Y = YUI().use("node", "json", "io", "datatype", "cookie");
-var WUT = WUT({YUI:Y});
+/* List-Detail UI Component */
+WUT.go("listDetail", function(lib) {
+  var uLib = lib.Utils, 
+      cLib = lib.Component;
 
+  lib.listDetail = function(config) {
+    var currentState, viewStates;
+    
+    currentState;
+    
+    config.children = [config.children]; // For now we only get one
+    
+    viewStates = {
+      login: {
+        template: uLib.tmpl("login"),
+        controller: function() {
+          return {}; // No controller needed
+        }
+      },
+      editSingle: {
+        onPreload: function(args) {
+          var child,
+              preloadConfigs = [],
+              params = {table:config.model.name}, 
+              childParams = {table:config.children[0].name};
+          
+          if(args && args.id) {
+            params.id = args.id;
+            childParams.filter = {"ticketId": args.id};
+            preloadConfigs.push({options: {resource: config.model.resource}, params: params});
+            for(child in config.children) { if(config.children.hasOwnProperty(child)) {
+              preloadConfigs.push({options: {resource: config.children[child].resource}, params: childParams});
+            }}
+            return preloadConfigs; // preload the record and its children
+          }
+          return []; // nothing to preload
+        },
+        onUnload: function() {
+          uLib.purgeElement("#submit-record");
+          uLib.purgeElement("#all-records");
+          uLib.purgeElement("#new-record");
+        },
+        template: uLib.tmpl("postticket"),
+        controller: function(responses, args) {
+          var saveSuccess = function(id, o, a) {
+            var child;
+            if(config.children) {
+              for(child in config.children) { if(config.children.hasOwnProperty(child)) {
+                var childForm = cLib.getFormValues(config.children[child].cols);
+                lib.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
+                  changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config);
+                });
+              }}
+            }
+            cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config);
+          };
+
+          var deleteSuccess = function(id, o, a) {
+          };
+          return {
+            record: function(field) {
+              if(responses && responses[0] && responses[0].result && responses[0].result[0] && responses[0].result[0][field]) {
+                return responses[0].result[0][field];
+              }
+              return "";
+            },
+            children: function() {
+              return responses[1].result;
+            },
+            save: function() {
+              var params,
+                  form;
+              form = cLib.getFormValues(config.model.cols);
+              params = {table:config.model.name, data:form};
+              if(args && args.id) { // Save to an existing record
+                params.id = args.id;
+                lib.post({resource: config.model.resource}, params, saveSuccess);
+              }
+              lib.put({resource: config.model.resource}, params, saveSuccess);
+            },
+            newSingle: function() {
+              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.newSingle, config);
+            },
+            deleteSingle: function() {
+              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
+            },
+            loadAll: function() {
+              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
+            },
+            onRender: function() {
+              uLib.on("click", this.save, "#submit-record", this);
+              uLib.on("click", this.loadAll, "#all-records", this);
+              uLib.on("click", this.newSingle, "#new-record", this);
+          
+            }
+          };
+        }
+      },
+      listAll: {
+        onPreload: function(args) {
+          return [
+            {options: {resource: config.model.resource}, params: {table:config.model.name}}
+          ];
+        },
+        onUnload: function() {
+          uLib.purgeElement(".new-record");
+        },
+        template: uLib.tmpl("listticket"),
+        controller: function(responses) {
+
+          var deleteSuccess = function(id, o, a) {
+          };
+
+          return {
+            records: function() {
+              return responses[0].result;
+            },
+            newSingle: function() {
+              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.newSingle, config);
+            },
+            loadSingle: function(e) {
+              var recordRDFa = e.target.getAttribute("about");
+              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.editSingle, config, {id: recordRDFa.substring(10, recordRDFa.length - 1)});
+            },
+            deleteSingle: function(id) {
+              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config);
+            },
+            onRender: function() {
+              uLib.on("click", this.loadSingle, ".new-record", this);
+            }
+          };
+        }
+      }
+    };
+
+    return {
+      render: function() {
+        cLib.changeViewState(viewStates, viewStates.login, viewStates.listAll, config);
+      }
+    };
+  };
+});
+</script>
+</div><!--TICKET_-->
+
+<script type="text/javascript">
+var Y = YUI().use("node", "json", "io", "datatype", "cookie");
+var W = WUT({YUI:Y});
+
+// Application developer configuration
 var ticket = {
   name: "ticket",
   resource: "virtual",
@@ -112,16 +251,16 @@ var comment = {
   }
 };
 
-var ticketUI = WUT.listDetail({
+var ticketUI = W.listDetail({
   model: ticket,
-  children: [comment],
-  target: "#ticket",
-  list: {label: "subject"},
-  detail: {}
+  children: comment,
+  target: "#ticket"
 });
 
+// End user sees rendered components
 ticketUI.render();
 
 </script>
+
 </body>
 </html>
