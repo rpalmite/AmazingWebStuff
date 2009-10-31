@@ -2,7 +2,7 @@
         "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 <title>Ticket Management</title>
 </head>
 <body>
@@ -34,7 +34,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <% if(record("createDate")) { %>Create Date: <%=record("createDate")%><br /><% } %>
   <label for="subject">Subject:</label><input type="text" id="subject" value="<%=record("subject")%>"></input><br />
   <br />
-  <input type="button" id="submit-record" value="Submit Ticket"></input>
+  <input type="button" id="submit-record" value="Save Ticket"></input>
   <% if(record("id")) { %>
   <h4>Comments</h4>
   <ul id="children">
@@ -47,7 +47,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <label for="children">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
   <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
   <br />
-  <input type="button" id="submit-child" value="Submit Comment"></input>
+  <input type="button" id="submit-child" value="Save Comment"></input>
   <% } %>
 </form>
 </script>
@@ -175,8 +175,9 @@ WUT.go("listDetail", function(lib) {
               }
               uLib.on("click", this.save, "#submit-record", this);
               uLib.on("click", this.loadAll, "#all-records", this);
-              uLib.on("click", this.newSingle, "#new-record", this);
-          
+              if(this.record("id")) {
+                uLib.on("click", this.newSingle, "#new-record", this);
+              }
             }
           };
         }
