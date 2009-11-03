@@ -35,7 +35,7 @@ def usage():
 	print "ERROR: invalid parameters"
 
 try:
-	opts, args = getopt.getopt(sys.argv[1:], "c:xl", ["--commit=,--export,--export-local"])
+	opts, args = getopt.getopt(sys.argv[1:], "c:xls", ["--commit=","--export","--export-local","--selenium-start"])
 except getopt.GetoptError:
 	usage()
 	sys.exit(2)
@@ -67,3 +67,11 @@ def putText(htmlFiles, srcDir, destDir):
 for o, a in opts:
 	if o == '-x' or o == '--export':
 		putText(ticketFiles, localRepo, remoteHTMLDir)
+# Start Selenium server on port 4444
+#
+def startSelenium():
+	executeCommands(['java -jar selenium-server-1.0.1/selenium-server.jar -Dhttp.proxyHost=proxy.com -Dhttp.proxyPort=4444'])
+
+for o, a in opts:
+	if o == '-s' or o == '--selenium-start':
+		(doInDir(localRepo, startSelenium))()

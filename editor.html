@@ -63,23 +63,25 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <br /><br />
 <table id="ticket-history">
   <tr>
-  <td>Id</td>
-  <td>Subject</td>
-  <td>Status</td>
-  <td>Submitter</td>
-  <td>Email</td>
-  <td>Created</td>
-  </tr>
-  <% for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
-  <tr>
-  <td><%=records()[recordIdx].id%></td>
-  <td><a href="#" class="edit-record" about='[_:Record-<%=records()[recordIdx].id%>]'><%=records()[recordIdx].subject%></a></td>
-  <td><%=records()[recordIdx].status%></td>
-  <td><%=records()[recordIdx].name%></td>
-  <td><%=records()[recordIdx].email%></td>
-  <td></td>
-  </tr>
+<% for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
+  <% if(recordDef()[fieldDef].visible !== false) { %>
+  <td><%=recordDef()[fieldDef].displayName %></td>
   <% } %>
+<% }} %>
+  </tr>
+<% for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
+  <tr>
+  <% for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
+    <% if(recordDef()[fieldDef].visible !== false) { %>
+    <td>
+      <% if(recordDef()[fieldDef].primaryCol) { %><a href="#" class="edit-record" about='[_:Record-<%=records()[recordIdx].id%>]'><% } %>
+      <%=records()[recordIdx][fieldDef]%>
+      <% if(recordDef()[fieldDef].primaryCol) { %></a><% } %>
+    </td>
+    <% } %>
+  <% }} %>
+  </tr>
+<% } %>
 </table>
 </script>
 <script type="text/javascript">
@@ -205,6 +207,11 @@ WUT.go("listDetail", function(lib) {
           };
 
           return {
+            recordDef: function() {
+              if(config && config.model && config.model.cols) {
+                return config.model.cols;
+              }
+            },
             records: function() {
               return responses[0].result;
             },
@@ -250,8 +257,8 @@ var ticket = {
     email:{type:"string", displayName: "Email", maxLength:"60"},
     phone:{type:"string", displayName: "Phone"},
     helpTopic:{type:"select", displayName: "Help Topic", options: ["Topic1", "Topic2"]},
-    subject:{type:"string", displayName: "Subject"},
-    createDate:{type:"date", displayName: "Create Date", visible: false},
+    subject:{type:"string", displayName: "Subject", primaryCol: true},
+    createDate:{type:"date", displayName: "Create Date"},
     status:{type:"select", displayName: "Status", options: ["Open", "Closed"]}
   }
 };
