@@ -21,22 +21,24 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <% if(record("id")) { %><a href="#" id="new-record">New Ticket</a><% } %>
 <br /><br />
 <form id="editticket">
-  <% for(var fieldDef in recordDef) { if(recordDef.hasOwnProperty(fieldDef)) { %>
-    <div id="<%=recordDef()[fieldDef].name%>"></div><!-- <%=recordDef()[fieldDef].name%> -->
-  <% } %>
-  <% if(record("name")) { %>Created by: <%=record("name")%><br /><% } %>
-  <label for="email">Email:</label><input type="text" id="email" value="<%=record("email")%>"></input><br />
-  <label for="phone">Phone:</label><input type="text" id="phone" value="<%=record("phone")%>"></input><br />
-  <label for="help-topic">Help Topic</label><select id="help-topic">
-    <option value="none" <% if(record("helpTopic") === "None") { %>selected="selected"<% } %>>None</option>
-  </select><br />
-  <label for="status">Status</label><select id="status">
-    <option value="none" <% if(record("status") === "Open") { %>selected="selected"<% } %>>Open</option>
-    <option value="none" <% if(record("status") === "Closed") { %>selected="selected"<% } %>>Closed</option>
-  </select><br />
-  <% if(record("createDate")) { %>Create Date: <%=record("createDate")%><br /><% } %>
-  <label for="subject">Subject:</label><input type="text" id="subject" value="<%=record("subject")%>"></input><br />
+<% for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
+  <% if(recordDef()[fieldDef].visible !== false) { %>
+    <% if(recordDef()[fieldDef].type === "string" || recordDef()[fieldDef].type === "select") { %>
+  <label for="<%=fieldDef%>"><%=recordDef()[fieldDef].displayName %>:</label>
+    <% } %>
+    <% if(recordDef()[fieldDef].type === "string") { %>
+  <input type="text" id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>></input>
+    <% } else if(recordDef()[fieldDef].type === "select") { %>
+  <select id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>>
+      <% for(var option in recordDef()[fieldDef].options) { if(recordDef()[fieldDef].options.hasOwnProperty(option)) { %>
+    <option value="none" <% if(record(fieldDef) === recordDef()[fieldDef].options[option]) { %>selected="selected"<% } %>><%=recordDef()[fieldDef].options[option]%></option>
+      <% }} %>
+  </select>  
+    <% } %>
   <br />
+  <% } %>
+<% }} %>
+  
   <input type="button" id="submit-record" value="Save"></input>
   <% if(record("id")) { %>
   <h4>Comments</h4>
@@ -139,6 +141,11 @@ WUT.go("listDetail", function(lib) {
           var deleteSuccess = function(id, o, a) {
           };
           return {
+            recordDef: function() {
+              if(config && config.model && config.model.cols) {
+                return config.model.cols;
+              }
+            },
             record: function(field) {
               if(responses && responses[0] && responses[0].result && responses[0].result[0] && responses[0].result[0][field]) {
                 return responses[0].result[0][field];
@@ -239,13 +246,13 @@ var ticket = {
   name: "ticket",
   resource: "virtual",
   cols: {
-    name:{type:"username"},
-    email:{type:"string", maxLength:"60"},
-    phone:{type:"string"},
-    helpTopic:{type:"string"},
-    subject:{type:"string"},
-    createDate:{type:"date"},
-    status:{type:"string"}
+    name:{type:"username", displayName: "Created By"},
+    email:{type:"string", displayName: "Email", maxLength:"60"},
+    phone:{type:"string", displayName: "Phone"},
+    helpTopic:{type:"select", displayName: "Help Topic", options: ["Topic1", "Topic2"]},
+    subject:{type:"string", displayName: "Subject"},
+    createDate:{type:"date", displayName: "Create Date", visible: false},
+    status:{type:"select", displayName: "Status", options: ["Open", "Closed"]}
   }
 };
 

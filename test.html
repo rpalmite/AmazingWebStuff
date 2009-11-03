@@ -18,7 +18,7 @@ module("rest api : core");
 
 asyncTest("MultiRequest Utility", 3, function() {
   var tableName = "MultiRequest_" + testDate, counter = 0;
-  reqs = WUT.MultiRequest(function() {
+  reqs = WUT.multiRequest(function() {
     start();
   });
   reqs.put({resource : "virtual"}, {table : tableName, data : {col1:"dub", col2:"tee", col3:"normal"}}, function(id, o, a) {
@@ -69,7 +69,7 @@ asyncTest("Asynchronous Virtual", 7, function() {
   
 asyncTest("Synchronous Virtual", 9, function() {
   var tableName1 = "test1_" + testDate, tableName2 = "test2_" + testDate;
-  reqs = WUT.MultiRequest();
+  reqs = WUT.multiRequest();
   reqs.put({resource : "virtual"}, {table : tableName1, data : {col1:"dub", col2:"tee", col3:"normal"}});
   reqs.put({resource : "virtual"}, {table : tableName1, data : {col1:"a1", col2:"a2", col3:"a3"}});
   reqs.get({resource: "virtual"}, {table : tableName1, filter: {col3: "normal"}}, function(id, o, a) {
@@ -79,7 +79,7 @@ asyncTest("Synchronous Virtual", 9, function() {
   
   reqs.start();
   
-  reqs = WUT.MultiRequest();
+  reqs = WUT.multiRequest();
   reqs.put({resource : "virtual"}, {table : tableName2, data : {col1:"dub", col2:"tee", col3:"normal"}});
   reqs.put({resource : "virtual"}, {table : tableName2, data : {col1:"dub-ya", col2:"tee-ya", col3:"hyphen"}});
   reqs.put({resource : "virtual"}, {table : tableName2, data : {col1:"I have a qoute '.", col2:"tee", col3:"quote"}});

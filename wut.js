@@ -244,7 +244,7 @@ if (typeof WUT === 'undefined' || !WUT) {
         request(options, params, callback, args);
         return this;
       };
-      W.MultiRequest = function(finalCallback, args) {
+      W.multiRequest = function(finalCallback, args) {
         var requests = [];
         return {
           get: function(options, params, callback, args) {
@@ -378,7 +378,7 @@ if (typeof WUT === 'undefined' || !WUT) {
         if(newState.onPreload) {
           preloads = newState.onPreload(args);
         }
-        reqs = W.MultiRequest(function(responses, newState) {
+        reqs = W.multiRequest(function(responses, newState) {
           /* Construct controller */
           c = newState.controller(responses, args);
           /* Create template */
@@ -392,8 +392,10 @@ if (typeof WUT === 'undefined' || !WUT) {
         }, newState);
         // Load the request queue
         for(preload in preloads) { if(preloads.hasOwnProperty(preload)) {
-          request = preloads[preload];
-          reqs.get(request.options, request.params, request.callback, request.args)
+          (function() {
+            request = preloads[preload];
+            reqs.get(request.options, request.params, request.callback, request.args);
+          })();
         }}
         reqs.start(); // Empty the requets queue
       };
