@@ -61,28 +61,36 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <a href="#" id="new-record">New Ticket</a>
 <a href="#" id="login-action"></a>
 <br /><br />
+<% if(isRecordSetShown()) { %>
 <table id="ticket-history">
   <tr>
-<% for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
-  <% if(recordDef()[fieldDef].visible !== false) { %>
+<%   for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
+<%     if(recordDef()[fieldDef].visible !== false) { %>
   <td><%=recordDef()[fieldDef].displayName %></td>
-  <% } %>
-<% }} %>
+<%     } %>
+<%   }} %>
+  <td><!--Delete--></td>
   </tr>
-<% for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
+<%   for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
+<%     if(isRecordShown(records()[recordIdx])) {%>
   <tr>
-  <% for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
-    <% if(recordDef()[fieldDef].visible !== false) { %>
+<%       for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
+<%         if(recordDef()[fieldDef].visible !== false) { %>
     <td>
-      <% if(recordDef()[fieldDef].primaryCol) { %><a href="#" class="edit-record" about='[_:Record-<%=records()[recordIdx].id%>]'><% } %>
+<%           if(recordDef()[fieldDef].primaryCol) { %><a href="#" class="edit-record" about='[_:Record-<%=records()[recordIdx].id%>]'><% } %>
       <%=records()[recordIdx][fieldDef]%>
-      <% if(recordDef()[fieldDef].primaryCol) { %></a><% } %>
+<%           if(recordDef()[fieldDef].primaryCol) { %></a><% } %>
     </td>
-    <% } %>
-  <% }} %>
+<%           } %>
+<%       }} %>
+  <td><a href="#" class="delete-record" about='[_:Record-<%=records()[recordIdx].id%>]'>Delete</a></td>
   </tr>
-<% } %>
+<%     } %>
+<%   } %>
 </table>
+<% } else { %>
+<h3>No Results Found</h3>
+<% } %>
 </script>
 <script type="text/javascript">
 /* List-Detail UI Component */
@@ -197,6 +205,7 @@ WUT.go("listDetail", function(lib) {
           ];
         },
         onUnload: function() {
+          uLib.purgeElement(".delete-record");
           uLib.purgeElement(".edit-record");
           uLib.purgeElement("#new-record");
         },
@@ -215,6 +224,24 @@ WUT.go("listDetail", function(lib) {
             records: function() {
               return responses[0].result;
             },
+            isRecordSetShown: function() {
+              var record;
+              for(record in responses[0].result) { if(responses[0].result.hasOwnProperty(record)) {
+                if(this.isRecordShown(responses[0].result[record])) {
+                  return true;
+                }
+              }}
+              return false;
+            },
+            isRecordShown: function(record) {
+              var fieldDef;
+              for(fieldDef in config.model.cols) { if(config.model.cols.hasOwnProperty(fieldDef)) {
+                if(config.model.cols[fieldDef].visible !== false && record[fieldDef] !== undefined ) {
+                  return true;
+                }
+              }}
+              return false;
+            },
             newSingle: function(e) {
               cLib.changeViewState(viewStates, viewStates.listAll, viewStates.editSingle, config);
             },
@@ -222,11 +249,15 @@ WUT.go("listDetail", function(lib) {
               var recordRDFa = e.target.getAttribute("about");
               cLib.changeViewState(viewStates, viewStates.listAll, viewStates.editSingle, config, {id: recordRDFa.substring(10, recordRDFa.length - 1)});
             },
-            deleteSingle: function(id) {
-              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config);
+            deleteSingle: function(e) {
+              var recordRDFa = e.target.getAttribute("about");
+              lib.del({resource: config.model.resource}, {table:config.model.name, id: recordRDFa.substring(10, recordRDFa.length - 1)}, function() {
+                cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config);
+              });
             },
             onRender: function() {
               uLib.on("click", this.loadSingle, ".edit-record", this);
+              uLib.on("click", this.deleteSingle, ".delete-record", this);
               uLib.on("click", this.newSingle, "#new-record", this);
             }
           };
