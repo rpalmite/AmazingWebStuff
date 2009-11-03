@@ -31,7 +31,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
     <% } else if(recordDef()[fieldDef].type === "select") { %>
   <select id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>>
       <% for(var option in recordDef()[fieldDef].options) { if(recordDef()[fieldDef].options.hasOwnProperty(option)) { %>
-    <option value="none" <% if(record(fieldDef) === recordDef()[fieldDef].options[option]) { %>selected="selected"<% } %>><%=recordDef()[fieldDef].options[option]%></option>
+    <option value="<%=recordDef()[fieldDef].options[option]%>" <% if(record(fieldDef) === recordDef()[fieldDef].options[option]) { %>selected="selected"<% } %>><%=recordDef()[fieldDef].options[option]%></option>
       <% }} %>
   </select>  
     <% } %>
@@ -39,7 +39,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <% } %>
 <% }} %>
   
-  <input type="button" id="submit-record" value="Save"></input>
+  <input type="button" id="save-record" value="Save"></input>
   <% if(record("id")) { %>
   <h4>Comments</h4>
   <ul id="children">
@@ -129,14 +129,17 @@ WUT.go("listDetail", function(lib) {
           return []; // nothing to preload
         },
         onUnload: function() {
-          uLib.purgeElement("#submit-record");
+          uLib.purgeElement("#save-record");
           uLib.purgeElement("#all-records");
           uLib.purgeElement("#new-record");
         },
         template: uLib.tmpl("editsingle"),
         controller: function(responses, args) {
           var saveSuccess = function(id, o, a) {
-            var child;
+            var child, id;
+            if(o.result) {
+              id = o.result;
+            }
             if(config.children) {
               for(child in config.children) { if(config.children.hasOwnProperty(child)) {
                 var childForm = cLib.getFormValues(config.children[child].cols);
@@ -145,7 +148,7 @@ WUT.go("listDetail", function(lib) {
                 });
               }}
             }
-            cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config);
+            cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: id});
           };
 
           var deleteSuccess = function(id, o, a) {
@@ -189,7 +192,7 @@ WUT.go("listDetail", function(lib) {
               cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
             },
             onRender: function() {
-              uLib.on("click", this.save, "#submit-record", this);
+              uLib.on("click", this.save, "#save-record", this);
               uLib.on("click", this.loadAll, "#all-records", this);
               if(this.record("id")) {
                 uLib.on("click", this.newSingle, "#new-record", this);
@@ -287,7 +290,7 @@ var ticket = {
     name:{type:"username", displayName: "Created By"},
     email:{type:"string", displayName: "Email", maxLength:"60"},
     phone:{type:"string", displayName: "Phone"},
-    helpTopic:{type:"select", displayName: "Help Topic", options: ["Topic1", "Topic2"]},
+    helpTopic:{type:"select", displayName: "Topic", options: ["Topic1", "Topic2"]},
     subject:{type:"string", displayName: "Subject", primaryCol: true},
     createDate:{type:"date", displayName: "Create Date"},
     status:{type:"select", displayName: "Status", options: ["Open", "Closed"]}

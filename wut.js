@@ -350,6 +350,9 @@ if (typeof WUT === 'undefined' || !WUT) {
             values[col] = W.Utils.dateFormat(new Date(), {format:"%Y-%m-%d %T"});
           } else if(cols[col] && cols[col].type === "username") {
             values[col] = W.currentUser().username;
+          } else if(cols[col] && cols[col].type === "select") {
+            foundNode = W.Utils.one("#" + col);
+            values[col] = foundNode.get("options").item(foundNode.get("selectedIndex")).get("value");
           } else {
             foundNode = W.Utils.one("#" + col);
             if(foundNode) {
