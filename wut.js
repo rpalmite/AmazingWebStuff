@@ -53,6 +53,12 @@ if (typeof WUT === 'undefined' || !WUT) {
           Utils.io = function(endpoint, config) {
             return Y.io.queue(endpoint, config);
           };
+          Utils.stop = function() {
+            return Y.io.queue.stop();
+          };
+          Utils.start = function() {
+            return Y.io.queue.start();
+          };
         }
         if(libs.YUI.DataType) {
           Utils.dateFormat = function(date, formatObj) {
@@ -238,6 +244,59 @@ if (typeof WUT === 'undefined' || !WUT) {
         request(options, params, callback, args);
         return this;
       };
+      W.MultiRequest = function(finalCallback, args) {
+        var requests = [];
+        return {
+          get: function(options, params, callback, args) {
+            requests.push({method:W.get, options:options, params:params, callback:callback, args:args});
+          },
+          post: function(options, params, callback, args) {
+            requests.push({method:W.post, options:options, params:params, callback:callback, args:args});
+          },
+          put: function(options, params, callback, args) {
+            requests.push({method:W.put, options:options, params:params, callback:callback, args:args});
+          },
+          del: function(options, params, callback, args) {
+            requests.push({method:W.del, options:options, params:params, callback:callback, args:args});
+          },
+          start: function() {
+            var req, responses = [];
+            if(requests && requests.length > 0) {
+              W.Utils.stop(); // Allow queuing
+              for(req in requests) { if(requests.hasOwnProperty(req)) {
+                (function() {
+                  var get = requests[req], 
+                      callback = get.callback;
+                  if(parseInt(req, 10) === requests.length - 1) {
+                    get.callback = function(id, o, a) {
+                      responses.push(o); // visibility?
+                      if(callback) {
+                        callback(id, o, a);
+                      }
+                      if(typeof(finalCallback) === 'function') {
+                        finalCallback(responses, args);
+                      }
+                    };
+                  } else {
+                    get.callback = function(id, o, a) {
+                      responses.push(o);
+                      if(callback) {
+                        callback(id, o, a);
+                      }
+                    };
+                  }
+                  get.method(get.options, get.params, get.callback, get.args);
+                })();
+              }}
+              W.Utils.start(); // Re-start the queue
+            } else {
+              if(typeof(finalCallback) === 'function') {
+                finalCallback([], args);
+              }
+            }
+          }
+        };
+      };
       W.currentUser = function() {
         var username = W.Utils.Cookie.get("username", {raw: true});
         var token = W.Utils.Cookie.get("token", {raw: true});
@@ -300,44 +359,12 @@ if (typeof WUT === 'undefined' || !WUT) {
         }}
         return values;
       };
-      W.Component.multiRequest = function(requests, success, newState) {
-        var req, get, responses = [], callback;
-        if(requests && requests.length > 0) {
-          for(req in requests) { if(requests.hasOwnProperty(req)) {
-            get = requests[req];
-            callback = get.callback;
-            if(parseInt(req, 10) === requests.length - 1) {
-              get.callback = function(id, o, a) {
-                responses.push(o); // visibility?
-                if(callback) {
-                  callback(id, o, a);
-                }
-                if(typeof(success) === 'function') {
-                  success(responses, newState);
-                }
-              };
-            } else {
-              get.callback = function(id, o, a) {
-                responses.push(o);
-                if(callback) {
-                  callback(id, o, a);
-                }
-              };
-            }
-            W.get(get.options, get.params, get.callback, get.args);
-          }}
-        } else {
-          if(typeof(success) === 'function') {
-            success([], newState);
-          }
-        }
-      };
       W.Component.isLoggedIn = function() {
         var user = W.currentUser();
         return (user.username) ? true: false;
       };
       W.Component.changeViewState = function(viewStates, currentState, newState, config, args) {
-        var resource, request, requests = [], preloads = [];
+        var request, preload, preloads = [];
         
         if(!W.Component.isLoggedIn()) {
           newState = viewStates.login;
@@ -351,8 +378,7 @@ if (typeof WUT === 'undefined' || !WUT) {
         if(newState.onPreload) {
           preloads = newState.onPreload(args);
         }
-        
-        W.Component.multiRequest(preloads, function(responses, newState) {
+        reqs = W.MultiRequest(function(responses, newState) {
           /* Construct controller */
           c = newState.controller(responses, args);
           /* Create template */
@@ -364,6 +390,12 @@ if (typeof WUT === 'undefined' || !WUT) {
             c.onRender();
           }
         }, newState);
+        // Load the request queue
+        for(preload in preloads) { if(preloads.hasOwnProperty(preload)) {
+          request = preloads[preload];
+          reqs.get(request.options, request.params, request.callback, request.args)
+        }}
+        reqs.start(); // Empty the requets queue
       };
     })();
     

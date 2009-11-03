@@ -21,6 +21,9 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <% if(record("id")) { %><a href="#" id="new-record">New Ticket</a><% } %>
 <br /><br />
 <form id="editticket">
+  <% for(var fieldDef in recordDef) { if(recordDef.hasOwnProperty(fieldDef)) { %>
+    <div id="<%=recordDef()[fieldDef].name%>"></div><!-- <%=recordDef()[fieldDef].name%> -->
+  <% } %>
   <% if(record("name")) { %>Created by: <%=record("name")%><br /><% } %>
   <label for="email">Email:</label><input type="text" id="email" value="<%=record("email")%>"></input><br />
   <label for="phone">Phone:</label><input type="text" id="phone" value="<%=record("phone")%>"></input><br />
@@ -34,7 +37,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <% if(record("createDate")) { %>Create Date: <%=record("createDate")%><br /><% } %>
   <label for="subject">Subject:</label><input type="text" id="subject" value="<%=record("subject")%>"></input><br />
   <br />
-  <input type="button" id="submit-record" value="Save Ticket"></input>
+  <input type="button" id="submit-record" value="Save"></input>
   <% if(record("id")) { %>
   <h4>Comments</h4>
   <ul id="children">
@@ -44,11 +47,11 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
     </li>
   <% } %>
   </ul>
-  <label for="children">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
-  <label for="attachment">Attachment:</label><input type="file" id="attachment"></input><br />
+  <a href="#" id="new-child">New Comment</a>
+  <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
   <br />
-  <input type="button" id="submit-child" value="Save Comment"></input>
   <% } %>
+  
 </form>
 </script>
 <script type="text/html" id="listall">
@@ -114,7 +117,6 @@ WUT.go("listDetail", function(lib) {
           return []; // nothing to preload
         },
         onUnload: function() {
-          uLib.purgeElement("#submit-child");
           uLib.purgeElement("#submit-record");
           uLib.purgeElement("#all-records");
           uLib.purgeElement("#new-record");
@@ -170,9 +172,6 @@ WUT.go("listDetail", function(lib) {
               cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
             },
             onRender: function() {
-              if(this.record("id")) {
-                uLib.on("click", this.save, "#submit-child", this);
-              }
               uLib.on("click", this.save, "#submit-record", this);
               uLib.on("click", this.loadAll, "#all-records", this);
               if(this.record("id")) {
