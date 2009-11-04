@@ -353,7 +353,7 @@ if (typeof WUT === 'undefined' || !WUT) {
           } else if(cols[col] && cols[col].type === "select") {
             foundNode = W.Utils.one("#" + col);
             values[col] = foundNode.get("options").item(foundNode.get("selectedIndex")).get("value");
-          } else {
+          } else { // Text and textarea
             foundNode = W.Utils.one("#" + col);
             if(foundNode) {
               values[col] = foundNode.get("value");

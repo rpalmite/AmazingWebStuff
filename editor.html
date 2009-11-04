@@ -22,38 +22,60 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <br /><br />
 <form id="editticket">
 <% for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
-  <% if(recordDef()[fieldDef].visible !== false) { %>
-    <% if(recordDef()[fieldDef].type === "string" || recordDef()[fieldDef].type === "select") { %>
+<%   if(recordDef()[fieldDef].visible !== false) { %>
+<%     if(recordDef()[fieldDef].type === "string" || recordDef()[fieldDef].type === "select") { %>
   <label for="<%=fieldDef%>"><%=recordDef()[fieldDef].displayName %>:</label>
-    <% } %>
-    <% if(recordDef()[fieldDef].type === "string") { %>
+<%     } %>
+<%     if(recordDef()[fieldDef].type === "string") { %>
   <input type="text" id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>></input>
-    <% } else if(recordDef()[fieldDef].type === "select") { %>
+<%     } else if(recordDef()[fieldDef].type === "select") { %>
   <select id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>>
-      <% for(var option in recordDef()[fieldDef].options) { if(recordDef()[fieldDef].options.hasOwnProperty(option)) { %>
+<%       for(var option in recordDef()[fieldDef].options) { if(recordDef()[fieldDef].options.hasOwnProperty(option)) { %>
     <option value="<%=recordDef()[fieldDef].options[option]%>" <% if(record(fieldDef) === recordDef()[fieldDef].options[option]) { %>selected="selected"<% } %>><%=recordDef()[fieldDef].options[option]%></option>
-      <% }} %>
+<%       }} %>
   </select>  
-    <% } %>
+<%     } %>
   <br />
-  <% } %>
+<%   } %>
 <% }} %>
   
-  <input type="button" id="save-record" value="Save"></input>
-  <% if(record("id")) { %>
-  <h4>Comments</h4>
-  <ul id="children">
-  <% for (var childIdx = 0; childIdx < children().length; childIdx++) { %>
-    <li><%=children()[childIdx]["name"]%> - <%=children()[childIdx]["createDate"]%><br />
-    <%=children()[childIdx]["text"]%>
-    </li>
-  <% } %>
-  </ul>
-  <a href="#" id="new-child">New Comment</a>
-  <label for="comment">Comment:</label><textarea rows="6" cols="60" id="comment"></textarea><br />
-  <br />
-  <% } %>
-  
+<input type="button" id="save-record" value="Save"></input>
+<% if(isChildRecordSetShown()) { %>
+<h4>Comments</h4>
+<ul id="children">
+<%   for (var recordIdx = 0; recordIdx < children().length; recordIdx++) { %>
+<%     if(isChildShown(children()[recordIdx])) {%>
+  <li>
+<%       for(var fieldDef in childDef()) { if(childDef().hasOwnProperty(fieldDef)) { %>
+<%         if(childDef()[fieldDef].visible !== false) { %>
+    <%=childDef()[fieldDef].displayName %>: <%=children()[recordIdx][fieldDef]%><br />
+<%         } %>
+<%       }} %>
+  </li>
+<%     } %>
+<%   } %>
+</ul>
+<% } else { %>
+<h4>No Child Results Found</h4>
+<% } %>
+
+<a href="#" id="new-child">New Child</a>
+<% for(var fieldDef in childDef()) { if(childDef().hasOwnProperty(fieldDef)) { %>
+<%   if(childDef()[fieldDef].visible !== false || childDef()[fieldDef].type === "manyToOne") { %>
+<div id="child-form">
+  <label for="<%=fieldDef%>"><%=childDef()[fieldDef].displayName%>:</label>
+<%     if(childDef()[fieldDef].type === "string" && childDef()[fieldDef].maxLength && childDef()[fieldDef].maxLength > 30) { %>
+  <textarea rows="6" cols="60" id="<%=fieldDef%>"></textarea><br />
+<%     } else if(childDef()[fieldDef].type === "username") { %>
+  <%=username() %>
+<%     } else if(childDef()[fieldDef].type === "manyToOne") {%>
+  <input type="hidden" id="<%=fieldDef%>" value="<%=record('id')%>"></input>
+<%     } %>
+<%   } %>
+<% }} %>
+<br />
+<input type="button" id="save-child" value="Save"></input>
+</div>
 </form>
 </script>
 <script type="text/html" id="listall">
@@ -72,7 +94,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <td><!--Delete--></td>
   </tr>
 <%   for (var recordIdx = 0; recordIdx < records().length; recordIdx++) { %>
-<%     if(isRecordShown(records()[recordIdx])) {%>
+<%     if(isRecordShown(records()[recordIdx])) { %>
   <tr>
 <%       for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
 <%         if(recordDef()[fieldDef].visible !== false) { %>
@@ -130,6 +152,7 @@ WUT.go("listDetail", function(lib) {
         },
         onUnload: function() {
           uLib.purgeElement("#save-record");
+          uLib.purgeElement("#save-child");
           uLib.purgeElement("#all-records");
           uLib.purgeElement("#new-record");
         },
@@ -153,6 +176,7 @@ WUT.go("listDetail", function(lib) {
 
           var deleteSuccess = function(id, o, a) {
           };
+
           return {
             recordDef: function() {
               if(config && config.model && config.model.cols) {
@@ -165,11 +189,38 @@ WUT.go("listDetail", function(lib) {
               }
               return "";
             },
+            childDef: function() {
+              if(config && config.children && config.children[0] && config.children[0].cols) {
+                return config.children[0].cols;
+              }
+            },
             children: function() {
               if(responses && responses[1] && responses[1].result) {
                 return responses[1].result;
               }
               return [];
+            },
+            isChildRecordSetShown: function() {
+              var record;
+              if(responses && responses[1] && responses[1].result) {
+                for(record in responses[1].result) { if(responses[1].result.hasOwnProperty(record)) {
+                  if(this.isChildShown(responses[1].result[record])) {
+                    return true;
+                  }
+                }}
+              }
+              return false;
+            },
+            isChildShown: function(record) {
+              var fieldDef;
+              if(config && config.children && config.children[0] && config.children[0].cols) {
+                for(fieldDef in config.children[0].cols) { if(config.children[0].cols.hasOwnProperty(fieldDef)) {
+                  if(config.children[0].cols[fieldDef].visible !== false && record && record[fieldDef] !== undefined ) {
+                    return true;
+                  }
+                }}
+              }
+              return false;
             },
             save: function() {
               var params,
@@ -179,8 +230,17 @@ WUT.go("listDetail", function(lib) {
               if(args && args.id) { // Save to an existing record
                 params.id = args.id;
                 lib.post({resource: config.model.resource}, params, saveSuccess);
+              } else {
+                lib.put({resource: config.model.resource}, params, saveSuccess);
               }
-              lib.put({resource: config.model.resource}, params, saveSuccess);
+            },
+            saveChild: function() {
+              var params,
+                  form;
+              form = cLib.getFormValues(config.children[0].cols);
+              lib.put({resource: config.children[0].resource}, {table:config.children[0].name, data:form}, function() {
+                cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: args.id});
+              });
             },
             newSingle: function() {
               cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config);
@@ -191,11 +251,15 @@ WUT.go("listDetail", function(lib) {
             loadAll: function() {
               cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
             },
+            username: function() {
+              return lib.currentUser().username;
+            },
             onRender: function() {
               uLib.on("click", this.save, "#save-record", this);
               uLib.on("click", this.loadAll, "#all-records", this);
               if(this.record("id")) {
                 uLib.on("click", this.newSingle, "#new-record", this);
+                uLib.on("click", this.saveChild, "#save-child", this);
               }
             }
           };
@@ -301,10 +365,10 @@ var comment = {
   name: "comment",
   resource: "virtual",
   cols: {
-    ticketId:{type:"manyToOne", fk:"ticket"},
-    createDate:{type:"date"},
-    text:{type:"string"},
-    username:{type:"username"}
+    ticketId:{type:"manyToOne", fk:"ticket", visible: false},
+    createDate:{type:"date", displayName: "Create Date"},
+    text:{type:"string", displayName: "Comment", maxLength:"60"},
+    username:{type:"username", displayName: "Username"}
   }
 };
 
