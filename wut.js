@@ -247,17 +247,17 @@ if (typeof WUT === 'undefined' || !WUT) {
       W.multiRequest = function(finalCallback, args) {
         var requests = [];
         return {
-          get: function(options, params, callback, args) {
-            requests.push({method:W.get, options:options, params:params, callback:callback, args:args});
+          get: function(options, params, callback, a) {
+            requests.push({method:W.get, options:options, params:params, callback:callback, args:a});
           },
-          post: function(options, params, callback, args) {
-            requests.push({method:W.post, options:options, params:params, callback:callback, args:args});
+          post: function(options, params, callback, a) {
+            requests.push({method:W.post, options:options, params:params, callback:callback, args:a});
           },
-          put: function(options, params, callback, args) {
-            requests.push({method:W.put, options:options, params:params, callback:callback, args:args});
+          put: function(options, params, callback, a) {
+            requests.push({method:W.put, options:options, params:params, callback:callback, args:a});
           },
-          del: function(options, params, callback, args) {
-            requests.push({method:W.del, options:options, params:params, callback:callback, args:args});
+          del: function(options, params, callback, a) {
+            requests.push({method:W.del, options:options, params:params, callback:callback, args:a});
           },
           start: function() {
             var req, responses = [];

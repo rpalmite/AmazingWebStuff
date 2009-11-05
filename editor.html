@@ -4,6 +4,38 @@
 <head>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 <title>Ticket Management</title>
+<style type="text/css">
+h4 {
+  padding: 0em;
+  margin: 0em;
+  size: 2em;
+}
+form {
+  padding: 1em;
+}
+
+form.edit-record input, form.edit-record select{
+  display: none;
+}
+
+div.edit span {
+  display: none;
+}
+div.edit input, div.edit select {
+  display: inline;
+}
+
+form.edit input, form.edit select {
+  display: inline;
+}
+form.edit div input[type="button"], form.edit span {
+  display: none;
+}
+
+.afford {
+  background-color: #ffffcc;
+}
+</style>
 </head>
 <body>
 <script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
@@ -20,63 +52,70 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <a href="#" id="all-records">All Tickets</a> 
 <% if(record("id")) { %><a href="#" id="new-record">New Ticket</a><% } %>
 <br /><br />
-<form id="editticket">
+<form class="edit-record <% if(!record("id")) { %>edit<% } %>">
 <% for(var fieldDef in recordDef()) { if(recordDef().hasOwnProperty(fieldDef)) { %>
 <%   if(recordDef()[fieldDef].visible !== false) { %>
 <%     if(recordDef()[fieldDef].type === "string" || recordDef()[fieldDef].type === "select") { %>
-  <label for="<%=fieldDef%>"><%=recordDef()[fieldDef].displayName %>:</label>
+  <div class="edit-field">
+    <label for="<%=fieldDef%>"><%=recordDef()[fieldDef].displayName %>:</label>
+    <span><%=record(fieldDef)%></span>
+<%       if(recordDef()[fieldDef].type === "string") { %>
+    <input type="text" id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>></input>
+<%       } else if(recordDef()[fieldDef].type === "select") { %>
+    <select id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>>
+<%         for(var option in recordDef()[fieldDef].options) { if(recordDef()[fieldDef].options.hasOwnProperty(option)) { %>
+      <option value="<%=recordDef()[fieldDef].options[option]%>" <% if(record(fieldDef) === recordDef()[fieldDef].options[option]) { %>selected="selected"<% } %>><%=recordDef()[fieldDef].options[option]%></option>
+<%         }} %>
+    </select>
 <%     } %>
-<%     if(recordDef()[fieldDef].type === "string") { %>
-  <input type="text" id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>></input>
-<%     } else if(recordDef()[fieldDef].type === "select") { %>
-  <select id="<%=fieldDef%>" <%if(record(fieldDef)) { %> value="<%=record(fieldDef)%>"<% } %>>
-<%       for(var option in recordDef()[fieldDef].options) { if(recordDef()[fieldDef].options.hasOwnProperty(option)) { %>
-    <option value="<%=recordDef()[fieldDef].options[option]%>" <% if(record(fieldDef) === recordDef()[fieldDef].options[option]) { %>selected="selected"<% } %>><%=recordDef()[fieldDef].options[option]%></option>
-<%       }} %>
-  </select>  
+    <br /><input type="button" class="save-field" value="Save"></input>
+  </div>
 <%     } %>
-  <br />
 <%   } %>
 <% }} %>
-  
-<input type="button" id="save-record" value="Save"></input>
-<% if(isChildRecordSetShown()) { %>
+<input type="button" id="save-record" value="Save Record"></input>
+</form>
+
+
+<% if(record("id")) { %>
+<%   if(isChildRecordSetShown()) { %>
 <h4>Comments</h4>
-<ul id="children">
-<%   for (var recordIdx = 0; recordIdx < children().length; recordIdx++) { %>
-<%     if(isChildShown(children()[recordIdx])) {%>
-  <li>
-<%       for(var fieldDef in childDef()) { if(childDef().hasOwnProperty(fieldDef)) { %>
-<%         if(childDef()[fieldDef].visible !== false) { %>
-    <%=childDef()[fieldDef].displayName %>: <%=children()[recordIdx][fieldDef]%><br />
-<%         } %>
-<%       }} %>
-  </li>
+<%     for (var recordIdx = 0; recordIdx < children().length; recordIdx++) { %>
+<%       if(isChildShown(children()[recordIdx])) {%>
+<div>
+<%         for(var fieldDef in childDef()) { if(childDef().hasOwnProperty(fieldDef)) { %>
+<%           if(childDef()[fieldDef].visible !== false) { %>
+  <%=childDef()[fieldDef].displayName %>: <%=children()[recordIdx][fieldDef]%><br />
+<%           } %>
+<%         }} %>
+</div><br />
+<%       } %>
 <%     } %>
-<%   } %>
-</ul>
-<% } else { %>
+<%   } else { %>
 <h4>No Child Results Found</h4>
-<% } %>
+<%   } %>
 
 <a href="#" id="new-child">New Child</a>
-<% for(var fieldDef in childDef()) { if(childDef().hasOwnProperty(fieldDef)) { %>
-<%   if(childDef()[fieldDef].visible !== false || childDef()[fieldDef].type === "manyToOne") { %>
-<div id="child-form">
+<form id="child-form">
+<%   for(var fieldDef in childDef()) { if(childDef().hasOwnProperty(fieldDef)) { %>
+<%     if(childDef()[fieldDef].visible !== false) { %>
   <label for="<%=fieldDef%>"><%=childDef()[fieldDef].displayName%>:</label>
-<%     if(childDef()[fieldDef].type === "string" && childDef()[fieldDef].maxLength && childDef()[fieldDef].maxLength > 30) { %>
-  <textarea rows="6" cols="60" id="<%=fieldDef%>"></textarea><br />
-<%     } else if(childDef()[fieldDef].type === "username") { %>
+<%       if(childDef()[fieldDef].type === "string" && childDef()[fieldDef].maxLength && childDef()[fieldDef].maxLength > 30) { %>
+  <textarea rows="6" cols="60" id="<%=fieldDef%>"></textarea>
+<%       } else if(childDef()[fieldDef].type === "username") { %>
   <%=username() %>
-<%     } else if(childDef()[fieldDef].type === "manyToOne") {%>
+<%       } else if(childDef()[fieldDef].type === "date") { %>
+           <!-- TODO -->
+<%       } %>
+  <br />
+<%     } else if(childDef()[fieldDef].type === "manyToOne") { %>
   <input type="hidden" id="<%=fieldDef%>" value="<%=record('id')%>"></input>
 <%     } %>
-<%   } %>
-<% }} %>
-<br />
-<input type="button" id="save-child" value="Save"></input>
-</div>
+<%   }} %>
+  <input type="button" id="save-child" value="Save"></input>
 </form>
+<% } %>
+
 </script>
 <script type="text/html" id="listall">
 <h1>Ticket History</h1>
@@ -155,21 +194,15 @@ WUT.go("listDetail", function(lib) {
           uLib.purgeElement("#save-child");
           uLib.purgeElement("#all-records");
           uLib.purgeElement("#new-record");
+          uLib.purgeElement("#edit-record");
+          uLib.purgeElement(".edit-field");
         },
         template: uLib.tmpl("editsingle"),
         controller: function(responses, args) {
           var saveSuccess = function(id, o, a) {
-            var child, id;
+            var id;
             if(o.result) {
               id = o.result;
-            }
-            if(config.children) {
-              for(child in config.children) { if(config.children.hasOwnProperty(child)) {
-                var childForm = cLib.getFormValues(config.children[child].cols);
-                lib.put({resource: config.children[child].resource}, {table:config.children[child].name, data:childForm}, function(id, o, a) {
-                  changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config);
-                });
-              }}
             }
             cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: id});
           };
@@ -229,7 +262,9 @@ WUT.go("listDetail", function(lib) {
               params = {table:config.model.name, data:form};
               if(args && args.id) { // Save to an existing record
                 params.id = args.id;
-                lib.post({resource: config.model.resource}, params, saveSuccess);
+                lib.post({resource: config.model.resource}, params, function() {
+                  cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: args.id});
+                });
               } else {
                 lib.put({resource: config.model.resource}, params, saveSuccess);
               }
@@ -254,12 +289,50 @@ WUT.go("listDetail", function(lib) {
             username: function() {
               return lib.currentUser().username;
             },
+            affordOn: function(e) {
+              var el = e.currentTarget;
+              if(!el.hasClass("edit") && !el.ancestor().hasClass("edit")) {
+                if(e.target === el) {
+                  el.addClass("afford");
+                }
+              }
+            },
+            affordOff: function(e) {
+              var el = e.currentTarget;
+              if(e.target === el) {
+                el.removeClass("afford");
+              }
+            },
+            recordEdit: function(e) {
+              var el = e.currentTarget;
+              if(!el.hasClass("edit")) {
+                if(e.target === el) {
+                  el.removeClass("afford");
+                  el.addClass("edit");
+                }
+              }
+            },
+            fieldEdit: function(e) {
+              var el = e.currentTarget;
+              if(!el.hasClass("edit")) {
+                if(e.target === el) {
+                  el.removeClass("afford");
+                  el.addClass("edit");
+                }
+              }
+            },
             onRender: function() {
               uLib.on("click", this.save, "#save-record", this);
               uLib.on("click", this.loadAll, "#all-records", this);
               if(this.record("id")) {
                 uLib.on("click", this.newSingle, "#new-record", this);
                 uLib.on("click", this.saveChild, "#save-child", this);
+                uLib.on("mouseover", this.affordOn, ".edit-record", this);
+                uLib.on("mouseout", this.affordOff, ".edit-record", this);
+                uLib.on("click", this.recordEdit, ".edit-record", this);
+                uLib.on("mouseover", this.affordOn, ".edit-field", this);
+                uLib.on("mouseout", this.affordOff, ".edit-field", this);
+                uLib.on("click", this.fieldEdit, ".edit-field", this);
               }
             }
           };
@@ -317,10 +390,27 @@ WUT.go("listDetail", function(lib) {
               cLib.changeViewState(viewStates, viewStates.listAll, viewStates.editSingle, config, {id: recordRDFa.substring(10, recordRDFa.length - 1)});
             },
             deleteSingle: function(e) {
-              var recordRDFa = e.target.getAttribute("about");
-              lib.del({resource: config.model.resource}, {table:config.model.name, id: recordRDFa.substring(10, recordRDFa.length - 1)}, function() {
-                cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config);
-              });
+              var recordRDFa = e.target.getAttribute("about"), 
+                  id;
+              id = recordRDFa.substring(10, recordRDFa.length - 1);
+
+              // Delete dangling children
+              lib.get({resource: config.children[0].resource}, {table:config.children[0].name, filter:{"ticketId": id}}, function(id, o, a) {
+                var child,
+                    childDeletes;
+                childDeletes = lib.multiRequest(function(responses, args) {
+                  // Once dangling records wiped, remove the parent
+                  lib.del({resource: config.model.resource}, {table:config.model.name, id: args.id}, function() {
+                    // Reload the listview
+                    cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config);
+                  });
+                },{id: a.args.id});
+                for(child in o.result) { if(o.result.hasOwnProperty(child)) {
+                  childDeletes.del({resource: config.children[0].resource}, {table:config.children[0].name, id: o.result[child].id});
+                }}
+                childDeletes.start();
+              }, {id: id});
+              
             },
             onRender: function() {
               uLib.on("click", this.loadSingle, ".edit-record", this);
