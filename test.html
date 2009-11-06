@@ -67,7 +67,6 @@ asyncTest("Asynchronous Virtual", 7, function() {
   });
 });
 
-
 asyncTest("JSON Parsing", 3, function() {
   var parsed;
   try {
@@ -86,7 +85,7 @@ asyncTest("JSON Parsing", 3, function() {
         success: function(id, o, a) {
           try {
             WUT.Utils.jsonParse(o.responseText),
-            ok(true);
+            ok(true, "JSON parse succeeded.");
             start();
           } catch(e) {
             ok(false, "JSON parse should succeed (Suspect single quote issue).");
