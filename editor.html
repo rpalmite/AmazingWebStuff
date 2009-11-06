@@ -45,10 +45,13 @@ form.edit div input[type="button"], form.edit span {
 <div id="TICKET_">
 <div id="ticket"></div>
 <script type="text/html" id="login">
+<div id="login-ui">
 Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
+</login>
 </script>
 <script type="text/html" id="editsingle">
-<h1><% if(record("id")) { %>Ticket #<%=record("id")%><% } else { %>New Ticket<% } %></h1>
+<div id="detail-ui">
+<h1 id="record-id"><% if(record("id")) { %>Ticket #<%=record("id")%><% } else { %>New Ticket<% } %></h1>
 <a href="#" id="all-records">All Tickets</a> 
 <% if(record("id")) { %><a href="#" id="new-record">New Ticket</a><% } %>
 <br /><br />
@@ -78,22 +81,24 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 
 
 <% if(record("id")) { %>
+<h4 id="record-children">
 <%   if(isChildRecordSetShown()) { %>
-<h4>Comments</h4>
+        Comments</h4>
 <%     for (var recordIdx = 0; recordIdx < children().length; recordIdx++) { %>
 <%       if(isChildShown(children()[recordIdx])) {%>
-<div>
+  <div class='child-record'>
 <%         for(var fieldDef in childDef()) { if(childDef().hasOwnProperty(fieldDef)) { %>
 <%           if(childDef()[fieldDef].visible !== false) { %>
-  <%=childDef()[fieldDef].displayName %>: <%=children()[recordIdx][fieldDef]%><br />
+    <%=childDef()[fieldDef].displayName %>: <span class="<%=fieldDef%>"><%=children()[recordIdx][fieldDef]%></span><br />
 <%           } %>
 <%         }} %>
-</div><br />
+  </div><br />
 <%       } %>
 <%     } %>
 <%   } else { %>
-<h4>No Child Results Found</h4>
+        No Child Results Found</h4>
 <%   } %>
+
 
 <a href="#" id="new-child">New Child</a>
 <form id="child-form">
@@ -115,13 +120,16 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
   <input type="button" id="save-child" value="Save"></input>
 </form>
 <% } %>
-
+</div><!--editsingleUI-->
 </script>
 <script type="text/html" id="listall">
+<div id="list-ui">
 <h1>Ticket History</h1>
 <a href="#" id="new-record">New Ticket</a>
 <a href="#" id="login-action"></a>
-<br /><br />
+<br />
+<div id="list-message"><%=message() %></div>
+<br />
 <% if(isRecordSetShown()) { %>
 <table id="ticket-history">
   <tr>
@@ -152,6 +160,7 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <% } else { %>
 <h3>No Results Found</h3>
 <% } %>
+</div><!--list-->
 </script>
 <script type="text/javascript">
 /* List-Detail UI Component */
@@ -194,7 +203,7 @@ WUT.go("listDetail", function(lib) {
           uLib.purgeElement("#save-child");
           uLib.purgeElement("#all-records");
           uLib.purgeElement("#new-record");
-          uLib.purgeElement("#edit-record");
+          uLib.purgeElement(".edit-record");
           uLib.purgeElement(".edit-field");
         },
         template: uLib.tmpl("editsingle"),
@@ -273,6 +282,7 @@ WUT.go("listDetail", function(lib) {
               var params,
                   form;
               form = cLib.getFormValues(config.children[0].cols);
+              uLib.one("#child-form").remove();
               lib.put({resource: config.children[0].resource}, {table:config.children[0].name, data:form}, function() {
                 cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: args.id});
               });
@@ -350,7 +360,7 @@ WUT.go("listDetail", function(lib) {
           uLib.purgeElement("#new-record");
         },
         template: uLib.tmpl("listall"),
-        controller: function(responses) {
+        controller: function(responses, args) {
 
           var deleteSuccess = function(id, o, a) {
           };
@@ -394,6 +404,8 @@ WUT.go("listDetail", function(lib) {
                   id;
               id = recordRDFa.substring(10, recordRDFa.length - 1);
 
+              uLib.one("#list-message").remove();
+
               // Delete dangling children
               lib.get({resource: config.children[0].resource}, {table:config.children[0].name, filter:{"ticketId": id}}, function(id, o, a) {
                 var child,
@@ -402,7 +414,7 @@ WUT.go("listDetail", function(lib) {
                   // Once dangling records wiped, remove the parent
                   lib.del({resource: config.model.resource}, {table:config.model.name, id: args.id}, function() {
                     // Reload the listview
-                    cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config);
+                    cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config, {message:"Deleted"});
                   });
                 },{id: a.args.id});
                 for(child in o.result) { if(o.result.hasOwnProperty(child)) {
@@ -411,6 +423,9 @@ WUT.go("listDetail", function(lib) {
                 childDeletes.start();
               }, {id: id});
               
+            },
+            message: function() {
+              return (args && args.message) ? args.message : "";
             },
             onRender: function() {
               uLib.on("click", this.loadSingle, ".edit-record", this);

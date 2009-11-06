@@ -26,6 +26,11 @@ if (typeof WUT === 'undefined' || !WUT) {
             return Y.JSON.stringify(obj);
           };
         }
+        if(libs.YUI.JSON && libs.YUI.JSON.parse) {
+          Utils.jsonParse = function(text) {
+            return Y.JSON.parse(text);
+          };
+        }
         if(libs.YUI.Cookie) {
           Utils.Cookie = {
             get: function(key, params) {
@@ -77,12 +82,13 @@ if (typeof WUT === 'undefined' || !WUT) {
           // Figure out if we're getting a template, or if we need to
           // load the template - and be sure to cache the result.
           if(!/\W/.test(str)) {
-            cache[str] = cache[str] || Utils.tmpl(document.getElementById(str).innerHTML);
+            cache[str] = cache[str] || 
+                         Utils.tmpl(document.getElementById(str).innerHTML);
             fn = cache[str]; 
           } else {
             // Generate a reusable function that will serve as a template
             // generator (and which will be cached).
-            var fn = new Function("obj",
+            fn = new Function("obj",
                 "var p=[],print=function(){p.push.apply(p,arguments);};" +
 
                 // Introduce the data as local variables using with(){}
@@ -95,8 +101,8 @@ if (typeof WUT === 'undefined' || !WUT) {
                    .split("\t").join("'")
                    .replace(/<%=(.+?)%>/g, "',$1,'")
                    .split("<%").join("');")
-                   .split("%>").join("p.push('")
-                + "');}return p.join('');");
+                   .split("%>").join("p.push('") + 
+                   "');}return p.join('');");
           }
 
           // Provide some basic currying to the user
@@ -113,14 +119,15 @@ if (typeof WUT === 'undefined' || !WUT) {
           path,
           amp = "",
           data = "",
-          param,
           token,
-          returnArgs;
+          key,
+          returnArgs,
+          value;
 
-        if(typeof options.resource !== 'undefined' && options.resource !== "") {
+        if(options && options.resource) {
           path = "/resource/json/" + options.resource;
 
-          for(var key in params) { if(params.hasOwnProperty(key)) {
+          for(key in params) { if(params.hasOwnProperty(key)) {
             if(key && params[key]) {
               value = W.Utils.jsonStringify(params[key]); 
               data = data + amp + key + "=" + value;
@@ -140,7 +147,14 @@ if (typeof WUT === 'undefined' || !WUT) {
           options.headers["AUTHENTICATION-TOKEN"] = token;
         }
 
-        returnArgs = {Y:libs.Y, WUT:W, resource: options.resource, table: params.table, method: options.method};
+        returnArgs = {
+          Y:libs.Y, 
+          WUT:W, 
+          resource: options.resource, 
+          table: params.table, 
+          method: options.method
+        };
+
         returnArgs.args = args;
 
         W.Utils.io(endpoint, {
@@ -149,42 +163,91 @@ if (typeof WUT === 'undefined' || !WUT) {
           headers: options.headers,
           on: {
             success: function(id, o, a) {
-              if(callback) {
-                callback(id, 
-                  eval("(" + o.responseText + ")"), 
-                  returnArgs
-                ); 
+              try {
+                if(callback) {
+                  callback(id,
+                    // W.Utils.jsonParse(o.responseText),
+                    eval("(" + o.responseText + ")"),
+                    returnArgs
+                  ); 
+                }
+              } catch(e) {
+                console.log("Bad server! JSON didn't pass JSON parse.\n\n %s",
+                    o.responseText);
               }
             }
           },
           context: this,
-          arguments: args
+          "arguments": args
         });
-      };
+      },
+          handleRequest = function(request, responses, args, finalObj) {
+        var callback = request.callback;
+        if(finalObj) {
+          request.callback = function(id, o, a) {
+            responses.push(o); // visibility?
+            if(callback) {
+              callback(id, o, a);
+            }
+            if(typeof(finalObj.finalCallback) === 'function') {
+              finalObj.finalCallback(responses, args);
+            }
+          };
+        } else {
+          request.callback = function(id, o, a) {
+            responses.push(o);
+            if(callback) {
+              callback(id, o, a);
+            }
+          };
+        }
+        request.method(
+          request.options, 
+          request.params, 
+          request.callback, 
+          request.args
+        );
+      },
       // parseUri 1.2.2 - Breaks a URI into pieces
-      // (c) Steven Levithan <http://blog.stevenlevithan.com/archives/parseuri> - MIT License
-      var parseUri = function(str, isStrict) {
+      // (c) Steven Levithan <http://blog.stevenlevithan.com/archives/parseuri>
+      // - MIT License
+          parseUri = function(str) {
         var o = {
-          strictMode: ((isStrict === true)? true: false),
-          key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
+          key: [
+            "source",
+            "protocol",
+            "authority",
+            "userInfo",
+            "user",
+            "password",
+            "host",
+            "port",
+            "relative",
+            "path",
+            "directory",
+            "file",
+            "query",
+            "anchor"
+          ],
           q: {
             name: "queryKey",
             parser: /(?:^|&)([^&=]*)=?([^&]*)/g
           },
-          parser: {
-            strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
-            loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
-          }
+          parser: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
         },
-        m = o.parser[o.strictMode ? "strict" : "loose"].exec(str),
+        m = o.parser.exec(str),
         uri = {},
         i = 14;
 
-        while (i--) uri[o.key[i]] = m[i] || "";
+        while(i--) {
+          uri[o.key[i]] = m[i] || "";
+        }
 
-        uri[o.q.name] = {}
+        uri[o.q.name] = {};
         uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) {
-          if ($1) uri[o.q.name][$1] = $2;
+          if($1) {
+            uri[o.q.name][$1] = $2;
+          }
         });
 
         return uri;
@@ -203,11 +266,12 @@ if (typeof WUT === 'undefined' || !WUT) {
             }
           },
           getQueryParams: function() {
-            var keyValuePairs = this.parts()["query"].split(/[&?]/g),
+            var keyValuePairs = this.parts().query.split(/[&?]/g),
                 params = {},
                 m,
+                n,
                 key,
-                i
+                i;
             for (i = 0, n = keyValuePairs.length; i < n; ++i) {
               m = keyValuePairs[i].match(/^([^=]+)(?:=([\s\S]*))?/);
               if (m) {
@@ -222,8 +286,8 @@ if (typeof WUT === 'undefined' || !WUT) {
               return parts.source + "";
             }
           }
-        }
-      }
+        };
+      };
       W.get = function(options, params, callback, args) {
         options.method = "GET";
         request(options, params, callback, args);
@@ -248,45 +312,60 @@ if (typeof WUT === 'undefined' || !WUT) {
         var requests = [];
         return {
           get: function(options, params, callback, a) {
-            requests.push({method:W.get, options:options, params:params, callback:callback, args:a});
+            requests.push({
+              method:W.get, 
+              options:options, 
+              params:params, 
+              callback:callback, 
+              args:a
+            });
           },
           post: function(options, params, callback, a) {
-            requests.push({method:W.post, options:options, params:params, callback:callback, args:a});
+            requests.push({
+              method:W.post, 
+              options:options, 
+              params:params, 
+              callback:callback, 
+              args:a
+            });
           },
           put: function(options, params, callback, a) {
-            requests.push({method:W.put, options:options, params:params, callback:callback, args:a});
+            requests.push({
+              method:W.put, 
+              options:options, 
+              params:params, 
+              callback:callback, 
+              args:a
+            });
           },
           del: function(options, params, callback, a) {
-            requests.push({method:W.del, options:options, params:params, callback:callback, args:a});
+            requests.push({
+              method:W.del, 
+              options:options, 
+              params:params, 
+              callback:callback, 
+              args:a
+            });
           },
           start: function() {
             var req, responses = [];
             if(requests && requests.length > 0) {
               W.Utils.stop(); // Allow queuing
               for(req in requests) { if(requests.hasOwnProperty(req)) {
-                (function() {
-                  var get = requests[req], 
-                      callback = get.callback;
-                  if(parseInt(req, 10) === requests.length - 1) {
-                    get.callback = function(id, o, a) {
-                      responses.push(o); // visibility?
-                      if(callback) {
-                        callback(id, o, a);
-                      }
-                      if(typeof(finalCallback) === 'function') {
-                        finalCallback(responses, args);
-                      }
-                    };
-                  } else {
-                    get.callback = function(id, o, a) {
-                      responses.push(o);
-                      if(callback) {
-                        callback(id, o, a);
-                      }
-                    };
-                  }
-                  get.method(get.options, get.params, get.callback, get.args);
-                })();
+                if(parseInt(req, 10) === requests.length - 1) {
+                  handleRequest(
+                    requests[req],
+                    responses,
+                    args,
+                    {finalCallback: finalCallback}
+                  );
+                } else {
+                  handleRequest(
+                    requests[req],
+                    responses,
+                    args
+                  );
+                }
               }}
               W.Utils.start(); // Re-start the queue
             } else {
@@ -298,8 +377,8 @@ if (typeof WUT === 'undefined' || !WUT) {
         };
       };
       W.currentUser = function() {
-        var username = W.Utils.Cookie.get("username", {raw: true});
-        var token = W.Utils.Cookie.get("token", {raw: true});
+        var username = W.Utils.Cookie.get("username", {raw: true}),
+            token = W.Utils.Cookie.get("token", {raw: true});
         if(token) {
           return {username: username, token: token};
         } else {
@@ -310,16 +389,34 @@ if (typeof WUT === 'undefined' || !WUT) {
         var loginCallback = function(id, o, a) {
           var today = new Date(),
               tomorrow = new Date();
-          if(o.result.indexOf("message") !== 0) { // Response doesn't start with an error message
+          // If response doesn't start with an error message
+          if(o.result.indexOf("message") !== 0) {
             tomorrow.setDate(today.getDate() + 1);
-            W.Utils.Cookie.set("username", a.args.username, {expires: tomorrow, raw: true});
-            W.Utils.Cookie.set("token", o.result, {expires: tomorrow, raw: true});
-            if(success) success(id, o, a);
+            W.Utils.Cookie.set(
+              "username",
+              a.args.username,
+              {expires: tomorrow, raw: true}
+            );
+            W.Utils.Cookie.set(
+              "token",
+              o.result,
+              {expires: tomorrow, raw: true}
+            );
+            if(success) {
+              success(id, o, a);
+            }
           } else {
-            if(success) success(id, o, a); // Todo: failure callback
+            if(success) {
+              success(id, o, a); // Todo: failure callback
+            }
           }
         };
-        this.post({resource: "authentication"}, {username: username, password: password}, loginCallback, {username:username});
+        this.post(
+          {resource: "authentication"},
+          {username: username, password: password},
+          loginCallback,
+          {username:username}
+        );
       };
       W.logout = function(success) {
         console.log("logout");
@@ -328,9 +425,13 @@ if (typeof WUT === 'undefined' || !WUT) {
         logoutCallback = function(id, o, a) {
           console.log("logout callback");
           if(o.result === "success") {
-            if(success) success(id, o, a);
+            if(success) { 
+              success(id, o, a);
+            }
           } else {
-            if(success) success(id, o, a); // Todo: failure callback
+            if(success) {
+              success(id, o, a); // Todo: failure callback
+            }
           }
         };
         token = W.Utils.Cookie.get("token", {raw: true});
@@ -347,12 +448,18 @@ if (typeof WUT === 'undefined' || !WUT) {
         var col, values = {}, foundNode;
         for(col in cols) { if(cols.hasOwnProperty(col)) {
           if(cols[col] && cols[col].type === "date") {
-            values[col] = W.Utils.dateFormat(new Date(), {format:"%Y-%m-%d %T"});
+            values[col] = W.Utils.dateFormat(
+              new Date(), 
+              {format:"%Y-%m-%d %T"}
+            );
           } else if(cols[col] && cols[col].type === "username") {
             values[col] = W.currentUser().username;
           } else if(cols[col] && cols[col].type === "select") {
             foundNode = W.Utils.one("#" + col);
-            values[col] = foundNode.get("options").item(foundNode.get("selectedIndex")).get("value");
+            values[col] = foundNode
+              .get("options")
+              .item(foundNode.get("selectedIndex"))
+              .get("value");
           } else { // Text and textarea
             foundNode = W.Utils.one("#" + col);
             if(foundNode) {
@@ -366,8 +473,14 @@ if (typeof WUT === 'undefined' || !WUT) {
         var user = W.currentUser();
         return (user.username) ? true: false;
       };
-      W.Component.changeViewState = function(viewStates, currentState, newState, config, args) {
-        var request, preload, preloads = [];
+      W.Component.changeViewState = function(
+        viewStates, 
+        currentState, 
+        newState, 
+        config, 
+        args
+      ) {
+        var p, preloads = [], reqs;
         
         if(!W.Component.isLoggedIn()) {
           newState = viewStates.login;
@@ -382,6 +495,7 @@ if (typeof WUT === 'undefined' || !WUT) {
           preloads = newState.onPreload(args);
         }
         reqs = W.multiRequest(function(responses, newState) {
+          var c, html;
           /* Construct controller */
           c = newState.controller(responses, args);
           /* Create template */
@@ -394,11 +508,13 @@ if (typeof WUT === 'undefined' || !WUT) {
           }
         }, newState);
         // Load the request queue
-        for(preload in preloads) { if(preloads.hasOwnProperty(preload)) {
-          (function() {
-            request = preloads[preload];
-            reqs.get(request.options, request.params, request.callback, request.args);
-          })();
+        for(p in preloads) { if(preloads.hasOwnProperty(p)) {
+          reqs.get(
+            preloads[p].options,
+            preloads[p].params,
+            preloads[p].callback,
+            preloads[p].args
+          );
         }}
         reqs.start(); // Empty the requets queue
       };
@@ -412,7 +528,7 @@ if (typeof WUT === 'undefined' || !WUT) {
       }}
     })();
 
-    // implied "return this;" if constructed with new
+    // implied "return this;"
   };
 }
 

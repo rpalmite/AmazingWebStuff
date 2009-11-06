@@ -66,6 +66,37 @@ asyncTest("Asynchronous Virtual", 7, function() {
     });
   });
 });
+
+
+asyncTest("JSON Parsing", 3, function() {
+  var parsed;
+  try {
+    parsed = Y.JSON.parse("{'foo':'bar'}");
+  } catch(e) {
+    ok(e.name === "SyntaxError", "Single quotes fail for JSON identifiers.");
+  }
+
+  parsed = Y.JSON.parse('{"result":[{"email":"pixelbrain", "helpTopic":"Topic1", "id":"820", "name":"pixelbrain@gmail.com", "phone":"8057046180", "status":"Open", "subject":"test"}]}');
+  ok(parsed.result[0].id === "820", "Double quotes required for JSON identifiers");
+  
+  WUT.put({resource : "virtual"}, {table : "json_" + testDate, data : {"foo":"bar"}}, function(id, o, a) {
+    WUT.Utils.io("http://api.webutilitykit.com:8000/resource/json/virtual?table=%22json_"+testDate+"%22", {
+      method: "GET",
+      on: {
+        success: function(id, o, a) {
+          try {
+            WUT.Utils.jsonParse(o.responseText),
+            ok(true);
+            start();
+          } catch(e) {
+            ok(false, "JSON parse should succeed (Suspect single quote issue).");
+            start();
+          }
+        }
+      }
+    });
+  });
+});
   
 asyncTest("Synchronous Virtual", 9, function() {
   var tableName1 = "test1_" + testDate, tableName2 = "test2_" + testDate;
@@ -122,6 +153,7 @@ asyncTest("Asynchronous Hash", 1, function() {
 });
 
 asyncTest("Asynchronous Errors", 1, function() {
+
   // return all errors
   WUT.put({resource:"errors"}, {});
 
@@ -133,7 +165,7 @@ asyncTest("Asynchronous Errors", 1, function() {
   WUT.put({resource:"errors"}, {id:errno}, function(id,o,a) {
      equals(null, o.result.error);
   }); 
-    
+   
 });
 
 module("Javascript snippets");
