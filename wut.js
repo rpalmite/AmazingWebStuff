@@ -86,7 +86,7 @@ var WUT = function (libs) { // Power constructor pattern
         // load the template - and be sure to cache the result.
         if (!/\W/.test(str)) {
           cache[str] = cache[str] || 
-                       Utils.tmpl(Utils.one(str).innerHTML);
+                       Utils.tmpl(document.getElementById(str).innerHTML);
           fn = cache[str]; 
         } else {
           // Generate a reusable function that will serve as a template
