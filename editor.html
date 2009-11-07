@@ -8,7 +8,7 @@
 h4 {
   padding: 0em;
   margin: 0em;
-  size: 2em;
+  font-size: 2em;
 }
 form {
   padding: 1em;
@@ -38,16 +38,17 @@ form.edit div input[type="button"], form.edit span {
 </style>
 </head>
 <body>
-<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
-<script type="text/javascript" src="wut.js"></script>
+<script src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
+<script src="wut.js"></script>
 
 <!-- List Detail Component -->
 <div id="TICKET_">
 <div id="ticket"></div>
+
 <script type="text/html" id="login">
 <div id="login-ui">
 Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
-</login>
+</div>
 </script>
 <script type="text/html" id="editsingle">
 <div id="detail-ui">
@@ -162,13 +163,14 @@ Not logged in. (<a href="/html/pages/login.html">Do it.</a>)
 <% } %>
 </div><!--list-->
 </script>
+
 <script type="text/javascript">
 /* List-Detail UI Component */
-WUT.go("listDetail", function(lib) {
+WUT.go("listDetail", function (lib) {
   var uLib = lib.Utils, 
       cLib = lib.Component;
 
-  lib.listDetail = function(config) {
+  lib.listDetail = function (config) {
     var viewStates;
     
     config.children = [config.children]; // For now we only get one
@@ -176,29 +178,37 @@ WUT.go("listDetail", function(lib) {
     viewStates = {
       login: {
         template: uLib.tmpl("login"),
-        controller: function() {
+        controller: function () {
           return {}; // No controller needed
         }
       },
       editSingle: {
-        onPreload: function(args) {
+        onPreload: function (args) {
           var child,
               preloadConfigs = [],
-              params = {table:config.model.name}, 
-              childParams = {table:config.children[0].name};
+              params = {table: config.model.name}, 
+              childParams = {table: config.children[0].name};
           
-          if(args && args.id) {
+          if (args && args.id) {
             params.id = args.id;
             childParams.filter = {"ticketId": args.id};
-            preloadConfigs.push({options: {resource: config.model.resource}, params: params});
-            for(child in config.children) { if(config.children.hasOwnProperty(child)) {
-              preloadConfigs.push({options: {resource: config.children[child].resource}, params: childParams});
-            }}
+            preloadConfigs.push({
+              options: {resource: config.model.resource},
+              params: params
+            });
+            for (child in config.children) { 
+              if (config.children.hasOwnProperty(child)) {
+                preloadConfigs.push({
+                  options: {resource: config.children[child].resource}, 
+                  params: childParams
+                });
+              }
+            }
             return preloadConfigs; // preload the record and its children
           }
           return []; // nothing to preload
         },
-        onUnload: function() {
+        onUnload: function () {
           uLib.purgeElement("#save-record");
           uLib.purgeElement("#save-child");
           uLib.purgeElement("#all-records");
@@ -207,134 +217,178 @@ WUT.go("listDetail", function(lib) {
           uLib.purgeElement(".edit-field");
         },
         template: uLib.tmpl("editsingle"),
-        controller: function(responses, args) {
-          var saveSuccess = function(id, o, a) {
-            var id;
-            if(o.result) {
-              id = o.result;
-            }
-            cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: id});
+        controller: function (responses, args) {
+          var saveSuccess = function (id, o, a) {
+            cLib.changeViewState(
+              viewStates,
+              viewStates.editSingle,
+              viewStates.editSingle,
+              config,
+              {id: o.result}
+            );
           };
-
-          var deleteSuccess = function(id, o, a) {
-          };
-
           return {
-            recordDef: function() {
-              if(config && config.model && config.model.cols) {
+            recordDef: function () {
+              if (config && config.model && config.model.cols) {
                 return config.model.cols;
               }
             },
-            record: function(field) {
-              if(responses && responses[0] && responses[0].result && responses[0].result[0] && responses[0].result[0][field]) {
+            record: function (field) {
+              if (responses && responses[0] && responses[0].result && 
+                  responses[0].result[0] && responses[0].result[0][field]) {
                 return responses[0].result[0][field];
               }
               return "";
             },
-            childDef: function() {
-              if(config && config.children && config.children[0] && config.children[0].cols) {
+            childDef: function () {
+              if (config && config.children && config.children[0] &&
+                  config.children[0].cols) {
                 return config.children[0].cols;
               }
             },
-            children: function() {
-              if(responses && responses[1] && responses[1].result) {
+            children: function () {
+              if (responses && responses[1] && responses[1].result) {
                 return responses[1].result;
               }
               return [];
             },
-            isChildRecordSetShown: function() {
+            isChildRecordSetShown: function () {
               var record;
-              if(responses && responses[1] && responses[1].result) {
-                for(record in responses[1].result) { if(responses[1].result.hasOwnProperty(record)) {
-                  if(this.isChildShown(responses[1].result[record])) {
-                    return true;
+              if (responses && responses[1] && responses[1].result) {
+                for (record in responses[1].result) {
+                  if (responses[1].result.hasOwnProperty(record)) {
+                    if (this.isChildShown(responses[1].result[record])) {
+                      return true;
+                    }
                   }
-                }}
+                }
               }
               return false;
             },
-            isChildShown: function(record) {
+            isChildShown: function (record) {
               var fieldDef;
-              if(config && config.children && config.children[0] && config.children[0].cols) {
-                for(fieldDef in config.children[0].cols) { if(config.children[0].cols.hasOwnProperty(fieldDef)) {
-                  if(config.children[0].cols[fieldDef].visible !== false && record && record[fieldDef] !== undefined ) {
-                    return true;
+              if (config && config.children && config.children[0] && 
+                  config.children[0].cols) {
+                for (fieldDef in config.children[0].cols) {
+                  if (config.children[0].cols.hasOwnProperty(fieldDef)) {
+                    if (config.children[0].cols[fieldDef].visible !== false && 
+                        record && record[fieldDef] !== undefined) {
+                      return true;
+                    }
                   }
-                }}
+                }
               }
               return false;
             },
-            save: function() {
+            save: function () {
               var params,
                   form;
               form = cLib.getFormValues(config.model.cols);
-              params = {table:config.model.name, data:form};
-              if(args && args.id) { // Save to an existing record
+              params = {table: config.model.name, data: form};
+              if (args && args.id) { // Save to an existing record
                 params.id = args.id;
-                lib.post({resource: config.model.resource}, params, function() {
-                  cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: args.id});
-                });
+                lib.post(
+                  {resource: config.model.resource},
+                  params,
+                  function () {
+                    cLib.changeViewState(
+                      viewStates,
+                      viewStates.editSingle,
+                      viewStates.editSingle,
+                      config,
+                      {id: args.id}
+                    );
+                  }
+                );
               } else {
-                lib.put({resource: config.model.resource}, params, saveSuccess);
+                lib.put(
+                  {resource: config.model.resource},
+                  params,
+                  saveSuccess
+                );
               }
             },
-            saveChild: function() {
-              var params,
-                  form;
+            saveChild: function () {
+              var form;
               form = cLib.getFormValues(config.children[0].cols);
               uLib.one("#child-form").remove();
-              lib.put({resource: config.children[0].resource}, {table:config.children[0].name, data:form}, function() {
-                cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config, {id: args.id});
-              });
+              lib.put(
+                {resource: config.children[0].resource},
+                {table: config.children[0].name, data: form},
+                function () {
+                  cLib.changeViewState(
+                    viewStates,
+                    viewStates.editSingle,
+                    viewStates.editSingle,
+                    config,
+                    {id: args.id}
+                  );
+                }
+              );
             },
-            newSingle: function() {
-              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.editSingle, config);
+            newSingle: function () {
+              cLib.changeViewState(
+                viewStates,
+                viewStates.editSingle,
+                viewStates.editSingle,
+                config
+              );
             },
-            deleteSingle: function() {
-              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
+            deleteSingle: function () {
+              cLib.changeViewState(
+                viewStates,
+                viewStates.editSingle,
+                viewStates.listAll,
+                config
+              );
             },
-            loadAll: function() {
-              cLib.changeViewState(viewStates, viewStates.editSingle, viewStates.listAll, config);
+            loadAll: function () {
+              cLib.changeViewState(
+                viewStates,
+                viewStates.editSingle,
+                viewStates.listAll,
+                config
+              );
             },
-            username: function() {
+            username: function () {
               return lib.currentUser().username;
             },
-            affordOn: function(e) {
+            affordOn: function (e) {
               var el = e.currentTarget;
-              if(!el.hasClass("edit") && !el.ancestor().hasClass("edit")) {
-                if(e.target === el) {
+              if (!el.hasClass("edit") && !el.ancestor().hasClass("edit")) {
+                if (e.target === el) {
                   el.addClass("afford");
                 }
               }
             },
-            affordOff: function(e) {
+            affordOff: function (e) {
               var el = e.currentTarget;
-              if(e.target === el) {
+              if (e.target === el) {
                 el.removeClass("afford");
               }
             },
-            recordEdit: function(e) {
+            recordEdit: function (e) {
               var el = e.currentTarget;
-              if(!el.hasClass("edit")) {
-                if(e.target === el) {
+              if (!el.hasClass("edit")) {
+                if (e.target === el) {
                   el.removeClass("afford");
                   el.addClass("edit");
                 }
               }
             },
-            fieldEdit: function(e) {
+            fieldEdit: function (e) {
               var el = e.currentTarget;
-              if(!el.hasClass("edit")) {
-                if(e.target === el) {
+              if (!el.hasClass("edit")) {
+                if (e.target === el) {
                   el.removeClass("afford");
                   el.addClass("edit");
                 }
               }
             },
-            onRender: function() {
+            onRender: function () {
               uLib.on("click", this.save, "#save-record", this);
               uLib.on("click", this.loadAll, "#all-records", this);
-              if(this.record("id")) {
+              if (this.record("id")) {
                 uLib.on("click", this.newSingle, "#new-record", this);
                 uLib.on("click", this.saveChild, "#save-child", this);
                 uLib.on("mouseover", this.affordOn, ".edit-record", this);
@@ -349,57 +403,72 @@ WUT.go("listDetail", function(lib) {
         }
       },
       listAll: {
-        onPreload: function(args) {
+        onPreload: function (args) {
           return [
-            {options: {resource: config.model.resource}, params: {table:config.model.name}}
+            {
+              options: {resource: config.model.resource},
+              params: {table: config.model.name}
+            }
           ];
         },
-        onUnload: function() {
+        onUnload: function () {
           uLib.purgeElement(".delete-record");
           uLib.purgeElement(".edit-record");
           uLib.purgeElement("#new-record");
         },
         template: uLib.tmpl("listall"),
-        controller: function(responses, args) {
-
-          var deleteSuccess = function(id, o, a) {
-          };
-
+        controller: function (responses, args) {
           return {
-            recordDef: function() {
-              if(config && config.model && config.model.cols) {
+            recordDef: function () {
+              if (config && config.model && config.model.cols) {
                 return config.model.cols;
               }
             },
-            records: function() {
+            records: function () {
               return responses[0].result;
             },
-            isRecordSetShown: function() {
+            isRecordSetShown: function () {
               var record;
-              for(record in responses[0].result) { if(responses[0].result.hasOwnProperty(record)) {
-                if(this.isRecordShown(responses[0].result[record])) {
-                  return true;
+              for (record in responses[0].result) {
+                if (responses[0].result.hasOwnProperty(record)) {
+                  if (this.isRecordShown(responses[0].result[record])) {
+                    return true;
+                  }
                 }
-              }}
+              }
               return false;
             },
-            isRecordShown: function(record) {
+            isRecordShown: function (record) {
               var fieldDef;
-              for(fieldDef in config.model.cols) { if(config.model.cols.hasOwnProperty(fieldDef)) {
-                if(config.model.cols[fieldDef].visible !== false && record[fieldDef] !== undefined ) {
-                  return true;
+              for (fieldDef in config.model.cols) {
+                if (config.model.cols.hasOwnProperty(fieldDef)) {
+                  if (config.model.cols[fieldDef].visible !== false &&
+                      record[fieldDef] !== undefined) {
+                    return true;
+                  }
                 }
-              }}
+              }
               return false;
             },
-            newSingle: function(e) {
-              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.editSingle, config);
+            newSingle: function (e) {
+              cLib.changeViewState(
+                viewStates,
+                viewStates.listAll,
+                viewStates.editSingle,
+                config
+              );
             },
-            loadSingle: function(e) {
+            loadSingle: function (e) {
               var recordRDFa = e.target.getAttribute("about");
-              cLib.changeViewState(viewStates, viewStates.listAll, viewStates.editSingle, config, {id: recordRDFa.substring(10, recordRDFa.length - 1)});
+              cLib.changeViewState(
+                viewStates,
+                viewStates.listAll,
+                viewStates.editSingle,
+                config,
+                {id: recordRDFa.substring(10, recordRDFa.length - 1)}
+              );
             },
-            deleteSingle: function(e) {
+            deleteSingle: function (e) {
               var recordRDFa = e.target.getAttribute("about"), 
                   id;
               id = recordRDFa.substring(10, recordRDFa.length - 1);
@@ -407,27 +476,53 @@ WUT.go("listDetail", function(lib) {
               uLib.one("#list-message").remove();
 
               // Delete dangling children
-              lib.get({resource: config.children[0].resource}, {table:config.children[0].name, filter:{"ticketId": id}}, function(id, o, a) {
-                var child,
-                    childDeletes;
-                childDeletes = lib.multiRequest(function(responses, args) {
-                  // Once dangling records wiped, remove the parent
-                  lib.del({resource: config.model.resource}, {table:config.model.name, id: args.id}, function() {
-                    // Reload the listview
-                    cLib.changeViewState(viewStates, viewStates.listAll, viewStates.listAll, config, {message:"Deleted"});
-                  });
-                },{id: a.args.id});
-                for(child in o.result) { if(o.result.hasOwnProperty(child)) {
-                  childDeletes.del({resource: config.children[0].resource}, {table:config.children[0].name, id: o.result[child].id});
-                }}
-                childDeletes.start();
-              }, {id: id});
-              
+              lib.get(
+                {resource: config.children[0].resource},
+                {table: config.children[0].name,
+                filter: {"ticketId": id}},
+                function (id, o, a) {
+                  var child,
+                      childDeletes;
+                  childDeletes = lib.multiRequest(
+                    function (responses, args) {
+                      // Once dangling records wiped, remove the parent
+                      lib.del(
+                        {resource: config.model.resource},
+                        {table: config.model.name, id: args.id},
+                        function () {
+                          // Reload the listview
+                          cLib.changeViewState(
+                            viewStates,
+                            viewStates.listAll,
+                            viewStates.listAll,
+                            config,
+                            {message: "Deleted"}
+                          );
+                        }
+                      );
+                    },
+                    {id: a.args.id}
+                  );
+                  for (child in o.result) {
+                    if (o.result.hasOwnProperty(child)) {
+                      childDeletes.del(
+                        {resource: config.children[0].resource},
+                        {
+                          table: config.children[0].name,
+                          id: o.result[child].id
+                        }
+                      );
+                    }
+                  }
+                  childDeletes.start();
+                },
+                {id: id}
+              );
             },
-            message: function() {
+            message: function () {
               return (args && args.message) ? args.message : "";
             },
-            onRender: function() {
+            onRender: function () {
               uLib.on("click", this.loadSingle, ".edit-record", this);
               uLib.on("click", this.deleteSingle, ".delete-record", this);
               uLib.on("click", this.newSingle, "#new-record", this);
@@ -438,8 +533,13 @@ WUT.go("listDetail", function(lib) {
     };
 
     return {
-      render: function() {
-        cLib.changeViewState(viewStates, viewStates.login, viewStates.listAll, config);
+      render: function () {
+        cLib.changeViewState(
+          viewStates,
+          viewStates.login,
+          viewStates.listAll,
+          config
+        );
       }
     };
   };
@@ -447,22 +547,30 @@ WUT.go("listDetail", function(lib) {
 </script>
 </div><!--TICKET_-->
 
-<script type="text/javascript">
+<script>
 var Y = YUI().use("node", "json", "io", "datatype", "cookie");
-var W = WUT({YUI:Y});
+var W = WUT({YUI: Y});
 
 // Application developer configuration
 var ticket = {
   name: "ticket",
   resource: "virtual",
   cols: {
-    name:{type:"username", displayName: "Created By"},
-    email:{type:"string", displayName: "Email", maxLength:"60"},
-    phone:{type:"string", displayName: "Phone"},
-    helpTopic:{type:"select", displayName: "Topic", options: ["Topic1", "Topic2"]},
-    subject:{type:"string", displayName: "Subject", primaryCol: true},
-    createDate:{type:"date", displayName: "Create Date"},
-    status:{type:"select", displayName: "Status", options: ["Open", "Closed"]}
+    name: {type: "username", displayName: "Created By"},
+    email: {type: "string", displayName: "Email", maxLength: "60"},
+    phone: {type: "string", displayName: "Phone"},
+    helpTopic: {
+      type: "select",
+      displayName: "Topic",
+      options: ["Topic1", "Topic2"]
+    },
+    subject: {type: "string", displayName: "Subject", primaryCol: true},
+    createDate: {type: "date", displayName: "Create Date"},
+    status: {
+      type: "select",
+      displayName: "Status",
+      options: ["Open", "Closed"]
+    }
   }
 };
 
@@ -470,10 +578,10 @@ var comment = {
   name: "comment",
   resource: "virtual",
   cols: {
-    ticketId:{type:"manyToOne", fk:"ticket", visible: false},
-    createDate:{type:"date", displayName: "Create Date"},
-    text:{type:"string", displayName: "Comment", maxLength:"60"},
-    username:{type:"username", displayName: "Username"}
+    ticketId: {type: "manyToOne", fk: "ticket", visible: false},
+    createDate: {type: "date", displayName: "Create Date"},
+    text: {type: "string", displayName: "Comment", maxLength: "60"},
+    username: {type: "username", displayName: "Username"}
   }
 };
 
