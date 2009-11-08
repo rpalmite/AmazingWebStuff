@@ -11,53 +11,57 @@ var WUT = function (libs) { // Power constructor pattern
 
   /* WUT Utilities */
   (function () {
-    var Utils = {};
+    var Utils = {},
+        Y = (libs && libs.YUI) ? libs.YUI : {};
     Utils.create = function (o) {
-        function F() {}
-        F.prototype = o;
-        return new F();
-      };
+      function F() {}
+      F.prototype = o;
+      return new F();
+    };
+
     /* Load capabilities from external libraries */
-    if (libs && libs.YUI) {
-      if (libs.YUI.one) {
-        Utils.one = function (selector) {
-          return Y.one(selector);
-        };
-      }
-      if (libs.YUI.JSON && libs.YUI.JSON.stringify) {
+    if (Y.one) {
+      Utils.one = function (selector) {
+        return Y.one(selector);
+      };
+    }
+    if (Y.JSON) {
+      if (Y.JSON.stringify) {
         Utils.jsonStringify = function (obj) {
           return Y.JSON.stringify(obj);
         };
       }
-      if (libs.YUI.JSON && libs.YUI.JSON.parse) {
+      if (Y.JSON.parse) { // (USES EVAL)
         Utils.jsonParse = function (text) {
           return Y.JSON.parse(text);
         };
       }
-      if (libs.YUI.Cookie) {
-        Utils.Cookie = {
-          get: function (key, params) {
-            return Y.Cookie.get(key, params);
-          },
-          set: function (key, value, params) {
-            return Y.Cookie.set(key, value, params);
-          },
-          remove: function (key) {
-            return Y.Cookie.remove(key);
-          }
-        };
-      }
-      if (libs.YUI.Event) {
-        Utils.purgeElement = function (selector) {
-          return Y.Event.purgeElement(selector);
-        };
-      }
-      if (libs.YUI.on) {
-        Utils.on = function (event, fn, selector, scope) {
-          return Y.on(event, fn, selector, scope);
-        };
-      }
-      if (libs.YUI.io && libs.YUI.io.queue) {
+    }
+    if (Y.Cookie) {
+      Utils.Cookie = {
+        get: function (key, params) {
+          return Y.Cookie.get(key, params);
+        },
+        set: function (key, value, params) {
+          return Y.Cookie.set(key, value, params);
+        },
+        remove: function (key) {
+          return Y.Cookie.remove(key);
+        }
+      };
+    }
+    if (Y.Event) {
+      Utils.purgeElement = function (selector) {
+        return Y.Event.purgeElement(selector);
+      };
+    }
+    if (Y.on) {
+      Utils.on = function (event, fn, selector, scope) {
+        return Y.on(event, fn, selector, scope);
+      };
+    }
+    if (Y.io) {
+      if (Y.io.queue) {
         Utils.io = function (endpoint, config) {
           return Y.io.queue(endpoint, config);
         };
@@ -68,13 +72,14 @@ var WUT = function (libs) { // Power constructor pattern
           return Y.io.queue.start();
         };
       }
-      if (libs.YUI.DataType) {
-        Utils.dateFormat = function (date, formatObj) {
-          return Y.DataType.Date.format(date, formatObj);
-        };
-      }
+    } 
+    if (Y.DataType) {
+      Utils.dateFormat = function (date, formatObj) {
+        return Y.DataType.Date.format(date, formatObj);
+      };
     }
-    // Simple JavaScript Templating
+
+    // Simple JavaScript Templating (USES EVAL)
     // John Resig - http://ejohn.org/ - MIT Licensed
     (function () {
       var cache = {};

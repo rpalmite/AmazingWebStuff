@@ -4,85 +4,16 @@
 <head>
   <script src="http://code.jquery.com/jquery-latest.js"></script>
   <link rel="stylesheet" href="http://github.com/jquery/qunit/raw/master/qunit/qunit.css" type="text/css" media="screen" />
-<script type="text/javascript" src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
+<!-- JS -->
+<script src="http://yui.yahooapis.com/combo?3.0.0/build/yui/yui-debug.js&3.0.0/build/json/json-debug.js&3.0.0/build/oop/oop-debug.js&3.0.0/build/event-custom/event-custom-debug.js&3.0.0/build/datatype/datatype-debug.js&3.0.0/build/dom/dom-debug.js&3.0.0/build/event/event-base-debug.js&3.0.0/build/pluginhost/pluginhost-debug.js&3.0.0/build/node/node-debug.js&3.0.0/build/event/event-delegate-debug.js&3.0.0/build/queue-promote/queue-promote-debug.js&3.0.0/build/io/io-debug.js&3.0.0/build/cookie/cookie-debug.js&3.0.0/build/dump/dump-debug.js"></script>
 <script type="text/javascript" src="http://github.com/jquery/qunit/raw/master/qunit/qunit.js"></script>
 <script type="text/javascript" src="wut.js"></script><!--http://github.com/rpalmite/AmazingWebStuff/raw/master/wut.js"></script>-->
 <script type="text/javascript">
-var Y = YUI().use("node", "json", "io", "io-queue", "datatype", "cookie");
+var Y = YUI().use("node", "json", "json-parse", "json-stringify", "io", "io-xdr", "io-queue", "datatype", "cookie");
 var WUT = WUT({YUI:Y});
 WUT.login("pixelbrain@gmail.com", "javascript");
 var testDate = Y.DataType.Date.format(new Date(), {format:"%Y-%m-%d-%H-%M-%S"})
 $(document).ready(function(){
-
-/*
-module("libraries : yui3");
-
-asyncTest("Cross Domain Request", 1, function() {
-  YUI({base:"../../build/", timeout: 10000}).use("io-xdr", "substitute", "json-parse",
-    function(Y) {
-      //Configure the cross-domain protocol:
-      var xdrConfig = {
-        id:'flash', //We'll reference this id in the xdr configuration of our transaction.
-        yid: Y.id,  //The yid provides a link from the Flash-based XDR engine
-                    //and the YUI instance.
-        src:'../../build/io/io.swf' //Relative path to the .swf file from the current page.
-      };
-      Y.io.transport(xdrConfig);
-
-      //Event handler called when the transaction begins:
-      var handleStart = function(id, a) {}
-
-      //Event handler for the success event -- use this handler to write the fetched
-      //RSS items to the page.
-      var handleSuccess = function(id, o, a) {
-
-        //We use JSON.parse to sanitize the JSON (as opposed to simply eval'ing
-        //it into the page):
-        var oRSS = Y.JSON.parse(o.responseText);
-
-        //From here, we simply access the JSON data from where it's provided
-        //in the Yahoo! Pipes output:
-        if (oRSS && oRSS.count) {
-          ok(true, o.responseText);
-        } else {
-          ok(false, o.responseText);
-        }
-      }
-
-      //In the event that the HTTP status returned is > 399, a
-      //failure is reported and this function is called:
-      var handleFailure = function(id, o, a) {
-        ok(false, "XDR failed.");
-      }
-
-      //With all the aparatus in place, we can now configure our
-      //io call.
-      var cfg = {
-        method: "GET",
-        xdr: {
-          use:'flash', //This is the xdrConfig id we referenced above.
-          responseXML:false //we're using JSON -- marginally faster, and
-                            //supported by the Pipes API
-          },
-          on: {
-            //Our event handlers previously defined:
-            start: handleStart,
-            success: handleSuccess,
-            failure: handleFailure
-          }
-        };
-
-      Y.on('io:xdrReady', function() {
-        Y.io(
-          "http://pipes.yahooapis.com/pipes/pipe.run?_id=giWz8Vc33BG6rQEQo_NLYQ&_render=json",
-          cfg
-        );
-      });
-    }
-  );
-
-});
-*/
 
 module("rest api : core");
 
@@ -311,6 +242,80 @@ test("constructor techniques.", function() {
   }
   F.testFoo();
   F(); // Equivalent to 'new F()';
+});
+
+module("libraries : yui3");
+
+asyncTest("Cross Domain Request", 1, function() {
+  setTimeout("ok(false,'XDR failed.');start()", 10000);
+  YUI({base:"../yui/build/", timeout: 10000}).use("io-xdr", "substitute", "json-parse",
+    function(Y) {
+      //Configure the cross-domain protocol:
+      var xdrConfig = {
+        id:'flash', //We'll reference this id in the xdr configuration of our transaction.
+        yid: Y.id,  //The yid provides a link from the Flash-based XDR engine
+                    //and the YUI instance.
+        // if browser cache cleared I get the json response, but no callback
+        src:'../yui/build/io/io.swf?t=' + new Date().valueOf().toString() //Relative path to the .swf file from the current page.
+        //src:'http://developer.yahoo.com/yui/3/build/io/io.swf?t=' + new Date().valueOf().toString() //Relative path to the .swf file from the current page.
+      };
+      Y.io.transport(xdrConfig);
+
+      //Event handler called when the transaction begins:
+      var handleStart = function(id, a) {
+        // yep
+      }
+
+      //Event handler for the success event -- use this handler to write the fetched
+      //RSS items to the page.
+      var handleSuccess = function(id, o, a) {
+
+        //We use JSON.parse to sanitize the JSON (as opposed to simply eval'ing
+        //it into the page):
+        var oRSS = Y.JSON.parse(o.responseText);
+
+        //From here, we simply access the JSON data from where it's provided
+        //in the Yahoo! Pipes output:
+        if (oRSS && oRSS.count) {
+          ok(true, o.responseText);
+        } else {
+          ok(false, o.responseText);
+        }
+      }
+
+      //In the event that the HTTP status returned is > 399, a
+      //failure is reported and this function is called:
+      var handleFailure = function(id, o, a) {
+        ok(false, "XDR failed.");
+      }
+
+      //With all the aparatus in place, we can now configure our
+      //io call.
+      var cfg = {
+        method: "GET",
+        xdr: {
+          use:'flash', //This is the xdrConfig id we referenced above.
+          responseXML:false //we're using JSON -- marginally faster, and
+                            //supported by the Pipes API
+          },
+          on: {
+            //Our event handlers previously defined:
+            start: handleStart,
+            success: handleSuccess,
+            failure: handleFailure
+          }
+        };
+        
+      //Y.on('io:failure', handleFailure, this, 'Transaction Failed'); 
+      //Y.on('io:success', handleSuccess, this, true);
+      Y.on('io:xdrReady', function() {
+        Y.io(
+          "http://pipes.yahooapis.com/pipes/pipe.run?_id=giWz8Vc33BG6rQEQo_NLYQ&_render=json",
+          cfg
+        );
+      });
+    }
+  );
 });
 
 });

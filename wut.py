@@ -13,7 +13,7 @@ localServ = '/Library/WebServer/Documents'
 localHTMLDir = '/html/pages'
 remoteServ = 'http://api.webutilitykit.com:8000'
 remoteHTMLDir = '/resource/html/pages'
-ticketFiles = ['test.html','editor.html','login.html','wut.js']
+ticketFiles = ['test.json','test.html','editor.html','login.html','wut.js']
 
 def doInDir(dir, fn):
 	def function(*args):
